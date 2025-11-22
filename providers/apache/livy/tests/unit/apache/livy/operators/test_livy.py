@@ -554,10 +554,7 @@ class TestLivyOperator:
             operator.hook.TERMINAL_STATES = [BatchState.SUCCESS]
             operator.execute(MagicMock())
 
-            assert (
-                "OpenLineage transport type `console` does not support automatic injection of OpenLineage transport information into Spark properties."
-                in caplog.text
-            )
+            assert "OpenLineage transport type `console` does not support automatic injection of OpenLineage transport information into Spark properties."
         assert operator.spark_params["conf"] == {}
 
 

@@ -16,7 +16,6 @@
 # under the License.
 from __future__ import annotations
 
-from collections.abc import Iterable
 from datetime import datetime
 from typing import Annotated, Any
 
@@ -84,7 +83,7 @@ class TaskInstanceResponse(BaseModel):
 class TaskInstanceCollectionResponse(BaseModel):
     """Task Instance Collection serializer for responses."""
 
-    task_instances: Iterable[TaskInstanceResponse]
+    task_instances: list[TaskInstanceResponse]
     total_entries: int
 
 

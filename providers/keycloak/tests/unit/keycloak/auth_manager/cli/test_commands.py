@@ -277,13 +277,7 @@ class TestCommands:
 
     def test_create_permissions_admin(self):
         client = Mock()
-        scopes = [
-            {"id": "1", "name": "GET"},
-            {"id": "2", "name": "MENU"},
-            {"id": "3", "name": "PUT"},
-            {"id": "4", "name": "LIST"},
-            {"id": "5", "name": "DUMMY"},
-        ]
+        scopes = [{"id": "1", "name": "GET"}, {"id": "2", "name": "MENU"}, {"id": "3", "name": "PUT"}]
 
         client.get_client_authz_scopes.return_value = scopes
 
@@ -297,7 +291,7 @@ class TestCommands:
                 "type": "scope",
                 "logic": "POSITIVE",
                 "decisionStrategy": "UNANIMOUS",
-                "scopes": ["1", "2", "3", "4"],
+                "scopes": ["1", "2", "3"],
             },
         )
 

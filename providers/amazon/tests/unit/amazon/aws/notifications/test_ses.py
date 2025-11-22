@@ -21,7 +21,7 @@ from unittest import mock
 import pytest
 
 from airflow.providers.amazon.aws.notifications.ses import SesNotifier, send_ses_notification
-from airflow.providers.amazon.version_compat import NOTSET
+from airflow.utils.types import NOTSET
 
 TEST_EMAIL_PARAMS = {
     "mail_from": "from@test.com",

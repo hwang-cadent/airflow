@@ -35,7 +35,7 @@ from airflow.providers.google.version_compat import BaseOperator
 
 if TYPE_CHECKING:
     from airflow.providers.common.compat.openlineage.facet import OutputDataset
-    from airflow.providers.common.compat.sdk import Context
+    from airflow.utils.context import Context
 
 
 class BaseSQLToGCSOperator(BaseOperator):
@@ -295,21 +295,21 @@ class BaseSQLToGCSOperator(BaseOperator):
 
             # Proceed to write the row to the localfile
             if self.export_format == "csv":
-                row2 = self.convert_types(schema, col_type_dict, row)
+                row = self.convert_types(schema, col_type_dict, row)
                 if self.null_marker is not None:
-                    row2 = [value or self.null_marker for value in row2]
-                csv_writer.writerow(row2)
+                    row = [value or self.null_marker for value in row]
+                csv_writer.writerow(row)
             elif self.export_format == "parquet":
-                row2 = self.convert_types(schema, col_type_dict, row)
+                row = self.convert_types(schema, col_type_dict, row)
                 if self.null_marker is not None:
-                    row2 = [value or self.null_marker for value in row2]
-                rows_buffer.append(row2)
+                    row = [value or self.null_marker for value in row]
+                rows_buffer.append(row)
                 if len(rows_buffer) >= self.parquet_row_group_size:
                     self._write_rows_to_parquet(parquet_writer, rows_buffer)
                     rows_buffer = []
             else:
-                row2 = self.convert_types(schema, col_type_dict, row)
-                row_dict = dict(zip(schema, row2))
+                row = self.convert_types(schema, col_type_dict, row)
+                row_dict = dict(zip(schema, row))
 
                 json.dump(row_dict, tmp_file_handle, sort_keys=True, ensure_ascii=False)
 

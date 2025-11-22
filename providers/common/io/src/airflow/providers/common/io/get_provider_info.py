@@ -30,10 +30,7 @@ def get_provider_info():
             {
                 "integration-name": "Common IO",
                 "external-doc-url": "https://filesystem-spec.readthedocs.io/en/latest/index.html",
-                "how-to-guide": [
-                    "/docs/apache-airflow-providers-common-io/operators.rst",
-                    "/docs/apache-airflow-providers-common-io/transfer.rst",
-                ],
+                "how-to-guide": ["/docs/apache-airflow-providers-common-io/operators.rst"],
                 "tags": ["software"],
             }
         ],

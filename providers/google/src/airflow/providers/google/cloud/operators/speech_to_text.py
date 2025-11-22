@@ -35,7 +35,7 @@ if TYPE_CHECKING:
     from google.api_core.retry import Retry
     from google.cloud.speech_v1.types import RecognitionConfig
 
-    from airflow.providers.common.compat.sdk import Context
+    from airflow.utils.context import Context
 
 
 class CloudSpeechToTextRecognizeSpeechOperator(GoogleCloudBaseOperator):

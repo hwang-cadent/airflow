@@ -18,13 +18,13 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
     import structlog.typing
 
     from airflow.sdk.types import RuntimeTaskInstanceProtocol as RuntimeTI
-    from airflow.utils.log.file_task_handler import LogResponse, StreamingLogResponse
+    from airflow.utils.log.file_task_handler import LogMessages, LogSourceInfo
 
 
 class RemoteLogIO(Protocol):
@@ -44,15 +44,6 @@ class RemoteLogIO(Protocol):
         """Upload the given log path to the remote storage."""
         ...
 
-    def read(self, relative_path: str, ti: RuntimeTI) -> LogResponse:
+    def read(self, relative_path: str, ti: RuntimeTI) -> tuple[LogSourceInfo, LogMessages | None]:
         """Read logs from the given remote log path."""
-        ...
-
-
-@runtime_checkable
-class RemoteLogStreamIO(RemoteLogIO, Protocol):
-    """Interface for remote task loggers with stream-based read support."""
-
-    def stream(self, relative_path: str, ti: RuntimeTI) -> StreamingLogResponse:
-        """Stream-based read interface for reading logs from the given remote log path."""
         ...

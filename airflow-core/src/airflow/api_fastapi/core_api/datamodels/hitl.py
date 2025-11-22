@@ -16,7 +16,7 @@
 # under the License.
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
+from collections.abc import Mapping
 from datetime import datetime
 from typing import Any
 
@@ -50,7 +50,7 @@ class HITLUser(BaseModel):
 
 
 class BaseHITLDetail(BaseModel):
-    """The common part within HITLDetail and HITLDetailHistory."""
+    """The common part within HITLDetail and HITLDetailHisotry."""
 
     # User Request Detail
     options: list[str] = Field(min_length=1)
@@ -58,7 +58,7 @@ class BaseHITLDetail(BaseModel):
     body: str | None = None
     defaults: list[str] | None = None
     multiple: bool = False
-    params: Mapping = Field(default_factory=dict)
+    params: dict[str, Any] = Field(default_factory=dict)
     assigned_users: list[HITLUser] = Field(default_factory=list)
     created_at: datetime
 
@@ -74,20 +74,7 @@ class BaseHITLDetail(BaseModel):
     @classmethod
     def get_params(cls, params: dict[str, Any]) -> dict[str, Any]:
         """Convert params attribute to dict representation."""
-        return {
-            key: value
-            if BaseHITLDetail._is_param(value)
-            else {
-                "value": value,
-                "description": None,
-                "schema": {},
-            }
-            for key, value in params.items()
-        }
-
-    @staticmethod
-    def _is_param(value: Any) -> bool:
-        return isinstance(value, dict) and all(key in value for key in ("description", "schema", "value"))
+        return {k: v.dump() if getattr(v, "dump", None) else v for k, v in params.items()}
 
 
 class HITLDetail(BaseHITLDetail):
@@ -99,5 +86,5 @@ class HITLDetail(BaseHITLDetail):
 class HITLDetailCollection(BaseModel):
     """Schema for a collection of Human-in-the-loop details."""
 
-    hitl_details: Iterable[HITLDetail]
+    hitl_details: list[HITLDetail]
     total_entries: int

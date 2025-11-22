@@ -19,9 +19,7 @@
 Operators and Hooks Reference
 =============================
 
-Here's the list of the operators and hooks which are available in this release.
-
-Note that commonly used operators and sensors (such as ``BashOperator``, ``PythonOperator``, ``ExternalTaskSensor``, etc.) are provided by the ``apache-airflow-providers-standard`` package.
+Here's the list of the operators and hooks which are available in this release in the ``apache-airflow`` package.
 
 Airflow has many more integrations available for separate installation as
 :doc:`apache-airflow-providers:index`.

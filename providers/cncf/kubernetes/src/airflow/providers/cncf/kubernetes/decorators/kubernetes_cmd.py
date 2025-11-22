@@ -21,7 +21,7 @@ from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING
 
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
-from airflow.providers.common.compat.sdk import (
+from airflow.providers.cncf.kubernetes.version_compat import (
     DecoratedOperator,
     TaskDecorator,
     context_merge,

@@ -25,8 +25,8 @@ from unittest import mock
 import pytest
 import sqlalchemy
 
+from airflow.models import Connection
 from airflow.models.dag import DAG
-from airflow.providers.common.compat.sdk import Connection
 
 try:
     import MySQLdb.cursors
@@ -52,7 +52,6 @@ INSERT_SQL_STATEMENT = "INSERT INTO connection (id, conn_id, conn_type, descript
 class TestMySqlHookConn:
     def setup_method(self):
         self.connection = Connection(
-            conn_id="test_conn_id",
             conn_type="mysql",
             login="login",
             password="password",
@@ -92,7 +91,7 @@ class TestMySqlHookConn:
 
     @mock.patch("MySQLdb.connect")
     @pytest.mark.parametrize(
-        ("connection_params", "expected_uri"),
+        "connection_params, expected_uri",
         [
             pytest.param(
                 {
@@ -195,14 +194,7 @@ class TestMySqlHookConn:
 
     @mock.patch("MySQLdb.connect")
     def test_get_conn_from_connection(self, mock_connect):
-        conn = Connection(
-            conn_id="test_conn_id",
-            conn_type="mysql",
-            login="login-conn",
-            password="password-conn",
-            host="host",
-            schema="schema",
-        )
+        conn = Connection(login="login-conn", password="password-conn", host="host", schema="schema")
         hook = MySqlHook(connection=conn)
         hook.get_conn()
         mock_connect.assert_called_once_with(
@@ -211,14 +203,7 @@ class TestMySqlHookConn:
 
     @mock.patch("MySQLdb.connect")
     def test_get_conn_from_connection_with_schema(self, mock_connect):
-        conn = Connection(
-            conn_id="test_conn_id",
-            conn_type="mysql",
-            login="login-conn",
-            password="password-conn",
-            host="host",
-            schema="schema",
-        )
+        conn = Connection(login="login-conn", password="password-conn", host="host", schema="schema")
         hook = MySqlHook(connection=conn, schema="schema-override")
         hook.get_conn()
         mock_connect.assert_called_once_with(

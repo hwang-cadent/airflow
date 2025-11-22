@@ -28,7 +28,6 @@ from typing import (
     Generic,
     Literal,
     TypeVar,
-    cast,
     overload,
 )
 
@@ -65,9 +64,7 @@ from airflow.utils.state import DagRunState, TaskInstanceState
 from airflow.utils.types import DagRunType
 
 if TYPE_CHECKING:
-    from sqlalchemy.orm.attributes import InstrumentedAttribute
     from sqlalchemy.sql import ColumnElement, Select
-
 
 T = TypeVar("T")
 
@@ -77,7 +74,7 @@ class BaseParam(OrmClause[T], ABC):
 
     def __init__(self, value: T | None = None, skip_none: bool = True) -> None:
         super().__init__(value)
-        self.attribute: ColumnElement | InstrumentedAttribute | None = None
+        self.attribute: ColumnElement | None = None
         self.skip_none = skip_none
 
     def set_value(self, value: T | None) -> Self:
@@ -231,7 +228,7 @@ class SortParam(BaseParam[list[str]]):
                 f"Ordering with more than {self.MAX_SORT_PARAMS} parameters is not allowed. Provided: {order_by_values}",
             )
 
-        columns: list[ColumnElement] = []
+        columns: list[Column] = []
         for order_by_value in order_by_values:
             lstriped_orderby = order_by_value.lstrip("-")
             column: Column | None = None
@@ -324,13 +321,13 @@ class FilterParam(BaseParam[T]):
 
     def __init__(
         self,
-        attribute: InstrumentedAttribute,
+        attribute: ColumnElement,
         value: T | None = None,
         filter_option: FilterOptionEnum = FilterOptionEnum.EQUAL,
         skip_none: bool = True,
     ) -> None:
         super().__init__(value, skip_none)
-        self.attribute: InstrumentedAttribute = attribute
+        self.attribute: ColumnElement = attribute
         self.value: T | None = value
         self.filter_option: FilterOptionEnum = filter_option
 
@@ -389,7 +386,7 @@ class FilterParam(BaseParam[T]):
 
 
 def filter_param_factory(
-    attribute: ColumnElement | InstrumentedAttribute,
+    attribute: ColumnElement,
     _type: type,
     filter_option: FilterOptionEnum = FilterOptionEnum.EQUAL,
     filter_name: str | None = None,
@@ -401,7 +398,7 @@ def filter_param_factory(
     description: str | None = None,
 ) -> Callable[[T | None], FilterParam[T | None]]:
     # if filter_name is not provided, use the attribute name as the default
-    filter_name = filter_name or getattr(attribute, "name", str(attribute))
+    filter_name = filter_name or attribute.name
     # can only set either default_value or default_factory
     query = (
         Query(alias=filter_name, default_factory=default_factory, description=description)
@@ -412,9 +409,7 @@ def filter_param_factory(
     def depends_filter(value: T | None = query) -> FilterParam[T | None]:
         if transform_callable:
             value = transform_callable(value)
-        # Cast to InstrumentedAttribute for type compatibility
-        attr = cast("InstrumentedAttribute", attribute)
-        return FilterParam(attr, value, filter_option, skip_none)
+        return FilterParam(attribute, value, filter_option, skip_none)
 
     # add type hint to value at runtime
     depends_filter.__annotations__["value"] = _type
@@ -511,7 +506,7 @@ class _DagIdAssetReferenceFilter(BaseParam[list[str]]):
     """Search on dag_id."""
 
     def __init__(self, skip_none: bool = True) -> None:
-        super().__init__(skip_none=skip_none)
+        super().__init__(AssetModel.scheduled_dags, skip_none)
 
     @classmethod
     def depends(cls, dag_ids: list[str] = Query(None)) -> _DagIdAssetReferenceFilter:
@@ -523,13 +518,10 @@ class _DagIdAssetReferenceFilter(BaseParam[list[str]]):
     def to_orm(self, select: Select) -> Select:
         if self.value is None and self.skip_none:
             return select
-
-        # At this point, self.value is either a list[str] or None -> coerce falsy None to an empty list
-        dag_ids = self.value or []
         return select.where(
-            (AssetModel.scheduled_dags.any(DagScheduleAssetReference.dag_id.in_(dag_ids)))
-            | (AssetModel.producing_tasks.any(TaskOutletAssetReference.dag_id.in_(dag_ids)))
-            | (AssetModel.consuming_tasks.any(TaskInletAssetReference.dag_id.in_(dag_ids)))
+            (AssetModel.scheduled_dags.any(DagScheduleAssetReference.dag_id.in_(self.value)))
+            | (AssetModel.producing_tasks.any(TaskOutletAssetReference.dag_id.in_(self.value)))
+            | (AssetModel.consuming_tasks.any(TaskInletAssetReference.dag_id.in_(self.value)))
         )
 
 
@@ -545,9 +537,9 @@ class Range(BaseModel, Generic[T]):
 class RangeFilter(BaseParam[Range]):
     """Filter on range in between the lower and upper bound."""
 
-    def __init__(self, value: Range | None, attribute: InstrumentedAttribute) -> None:
+    def __init__(self, value: Range | None, attribute: ColumnElement) -> None:
         super().__init__(value)
-        self.attribute: InstrumentedAttribute = attribute
+        self.attribute: ColumnElement = attribute
 
     def to_orm(self, select: Select) -> Select:
         if self.skip_none is False:
@@ -583,7 +575,7 @@ class RangeFilter(BaseParam[Range]):
 
 def datetime_range_filter_factory(
     filter_name: str, model: Base, attribute_name: str | None = None
-) -> Callable[[datetime | None, datetime | None, datetime | None, datetime | None], RangeFilter]:
+) -> Callable[[datetime | None, datetime | None], RangeFilter]:
     def depends_datetime(
         lower_bound_gte: datetime | None = Query(alias=f"{filter_name}_gte", default=None),
         lower_bound_gt: datetime | None = Query(alias=f"{filter_name}_gt", default=None),
@@ -608,7 +600,7 @@ def datetime_range_filter_factory(
 
 def float_range_filter_factory(
     filter_name: str, model: Base
-) -> Callable[[float | None, float | None, float | None, float | None], RangeFilter]:
+) -> Callable[[float | None, float | None], RangeFilter]:
     def depends_float(
         lower_bound_gte: float | None = Query(alias=f"{filter_name}_gte", default=None),
         lower_bound_gt: float | None = Query(alias=f"{filter_name}_gt", default=None),
@@ -872,15 +864,6 @@ QueryTIQueueFilter = Annotated[
         filter_param_factory(TaskInstance.queue, list[str], FilterOptionEnum.ANY_EQUAL, default_factory=list)
     ),
 ]
-QueryTIPoolNamePatternSearch = Annotated[
-    _SearchParam,
-    Depends(search_param_factory(TaskInstance.pool, "pool_name_pattern")),
-]
-
-QueryTIQueueNamePatternSearch = Annotated[
-    _SearchParam,
-    Depends(search_param_factory(TaskInstance.queue, "queue_name_pattern")),
-]
 QueryTIExecutorFilter = Annotated[
     FilterParam[list[str]],
     Depends(
@@ -929,15 +912,6 @@ QueryTIOperatorFilter = Annotated[
     Depends(
         filter_param_factory(
             TaskInstance.operator, list[str], FilterOptionEnum.ANY_EQUAL, default_factory=list
-        )
-    ),
-]
-QueryTIOperatorNamePatternSearch = Annotated[
-    _SearchParam,
-    Depends(
-        search_param_factory(
-            TaskInstance.custom_operator_name,
-            "operator_name_pattern",
         )
     ),
 ]

@@ -45,7 +45,6 @@ from google.cloud.storage.retry import DEFAULT_RETRY
 
 from airflow.exceptions import AirflowException, AirflowProviderDeprecationWarning
 from airflow.providers.common.compat.lineage.hook import get_hook_lineage_collector
-from airflow.providers.common.compat.sdk import timezone
 from airflow.providers.google.cloud.utils.helpers import normalize_directory_path
 from airflow.providers.google.common.consts import CLIENT_INFO
 from airflow.providers.google.common.hooks.base_google import (
@@ -53,6 +52,11 @@ from airflow.providers.google.common.hooks.base_google import (
     GoogleBaseAsyncHook,
     GoogleBaseHook,
 )
+
+try:
+    from airflow.sdk import timezone
+except ImportError:
+    from airflow.utils import timezone  # type: ignore[attr-defined,no-redef]
 from airflow.version import version
 
 if TYPE_CHECKING:
@@ -371,7 +375,8 @@ class GCSHook(GoogleBaseHook):
                         num_max_attempts,
                     )
                     raise
-        raise NotImplementedError  # should not reach this, but makes mypy happy
+        else:
+            raise NotImplementedError  # should not reach this, but makes mypy happy
 
     def download_as_byte_array(
         self,

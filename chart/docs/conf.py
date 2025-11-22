@@ -204,8 +204,9 @@ def _format_examples(param_name: str, schema: dict) -> str | None:
 
     # Nicer to have the parameter name shown as well
     out = ""
-    for ex_data in schema["examples"]:
-        ex = [ex_data] if schema["type"] == "array" else ex_data
+    for ex in schema["examples"]:
+        if schema["type"] == "array":
+            ex = [ex]
         out += yaml.dump({param_name: ex})
     return out
 

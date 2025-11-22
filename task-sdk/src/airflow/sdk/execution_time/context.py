@@ -46,8 +46,6 @@ from airflow.sdk.log import mask_secret
 if TYPE_CHECKING:
     from uuid import UUID
 
-    from pydantic.types import JsonValue
-
     from airflow.sdk import Variable
     from airflow.sdk.bases.operator import BaseOperator
     from airflow.sdk.definitions.connection import Connection
@@ -356,9 +354,6 @@ class ConnectionAccessor:
         # All instances of ConnectionAccessor are equal since it is a stateless dynamic accessor
         return True
 
-    def __hash__(self):
-        return hash(self.__class__.__name__)
-
     def get(self, conn_id: str, default_conn: Any = None) -> Any:
         from airflow.exceptions import AirflowNotFoundException
 
@@ -383,9 +378,6 @@ class VariableAccessor:
             return False
         # All instances of VariableAccessor are equal since it is a stateless dynamic accessor
         return True
-
-    def __hash__(self):
-        return hash(self.__class__.__name__)
 
     def __repr__(self) -> str:
         return "<VariableAccessor (dynamic access)>"
@@ -422,9 +414,6 @@ class MacrosAccessor:
         if not isinstance(other, MacrosAccessor):
             return False
         return True
-
-    def __hash__(self):
-        return hash(self.__class__.__name__)
 
 
 class _AssetRefResolutionMixin:
@@ -482,10 +471,10 @@ class OutletEventAccessor(_AssetRefResolutionMixin):
     """Wrapper to access an outlet asset event in template."""
 
     key: BaseAssetUniqueKey
-    extra: dict[str, JsonValue] = attrs.Factory(dict)
+    extra: dict[str, Any] = attrs.Factory(dict)
     asset_alias_events: list[AssetAliasEvent] = attrs.field(factory=list)
 
-    def add(self, asset: Asset | AssetRef, extra: dict[str, JsonValue] | None = None) -> None:
+    def add(self, asset: Asset | AssetRef, extra: dict[str, Any] | None = None) -> None:
         """Add an AssetEvent to an existing Asset."""
         if not isinstance(self.key, AssetAliasUniqueKey):
             return
@@ -869,18 +858,18 @@ def context_to_airflow_vars(context: Mapping[str, Any], in_env_var_format: bool 
     ]
 
     context_params = settings.get_airflow_context_vars(context)
-    for key_raw, value in context_params.items():
-        if not isinstance(key_raw, str):
-            raise TypeError(f"key <{key_raw}> must be string")
+    for key, value in context_params.items():
+        if not isinstance(key, str):
+            raise TypeError(f"key <{key}> must be string")
         if not isinstance(value, str):
-            raise TypeError(f"value of key <{key_raw}> must be string, not {type(value)}")
+            raise TypeError(f"value of key <{key}> must be string, not {type(value)}")
 
-        if in_env_var_format and not key_raw.startswith(ENV_VAR_FORMAT_PREFIX):
-            key = ENV_VAR_FORMAT_PREFIX + key_raw.upper()
-        elif not key_raw.startswith(DEFAULT_FORMAT_PREFIX):
-            key = DEFAULT_FORMAT_PREFIX + key_raw
+        if in_env_var_format:
+            if not key.startswith(ENV_VAR_FORMAT_PREFIX):
+                key = ENV_VAR_FORMAT_PREFIX + key.upper()
         else:
-            key = key_raw
+            if not key.startswith(DEFAULT_FORMAT_PREFIX):
+                key = DEFAULT_FORMAT_PREFIX + key
         params[key] = value
 
     for subject, attr, mapping_key in ops:

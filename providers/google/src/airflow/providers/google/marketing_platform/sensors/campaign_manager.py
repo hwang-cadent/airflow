@@ -26,7 +26,7 @@ from airflow.providers.common.compat.sdk import BaseSensorOperator
 from airflow.providers.google.marketing_platform.hooks.campaign_manager import GoogleCampaignManagerHook
 
 if TYPE_CHECKING:
-    from airflow.providers.common.compat.sdk import Context
+    from airflow.utils.context import Context
 
 
 class GoogleCampaignManagerReportSensor(BaseSensorOperator):

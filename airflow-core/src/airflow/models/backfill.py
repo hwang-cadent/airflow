@@ -24,7 +24,6 @@ Internal classes for management of dag backfills.
 from __future__ import annotations
 
 import logging
-from collections.abc import Sequence
 from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING
@@ -53,9 +52,6 @@ from airflow.utils.state import DagRunState
 from airflow.utils.types import DagRunTriggeredByType, DagRunType
 
 if TYPE_CHECKING:
-    from sqlalchemy.orm import Session
-
-    from airflow.models.dagrun import DagRun
     from airflow.serialization.serialized_objects import SerializedDAG
     from airflow.timetables.base import DagRunInfo
 
@@ -134,7 +130,7 @@ class Backfill(Base):
     dag_id: Mapped[str] = mapped_column(StringID(), nullable=False)
     from_date: Mapped[datetime] = mapped_column(UtcDateTime, nullable=False)
     to_date: Mapped[datetime] = mapped_column(UtcDateTime, nullable=False)
-    dag_run_conf: Mapped[dict] = mapped_column(JSONField(json=json), nullable=False, default={})
+    dag_run_conf: Mapped[JSONField] = mapped_column(JSONField(json=json), nullable=False, default={})
     is_paused: Mapped[bool | None] = mapped_column(Boolean, default=False, nullable=True)
     """
     Controls whether new dag runs will be created for this backfill.
@@ -214,13 +210,13 @@ class BackfillDagRun(Base):
     )
 
     @validates("sort_ordinal")
-    def validate_sort_ordinal(self, key: str, val: int) -> int:
+    def validate_sort_ordinal(self, key, val):
         if val < 1:
             raise ValueError("sort_ordinal must be >= 1")
         return val
 
 
-def _get_latest_dag_run_row_query(*, dag_id: str, info: DagRunInfo, session: Session):
+def _get_latest_dag_run_row_query(*, dag_id, info, session):
     from airflow.models import DagRun
 
     return (
@@ -246,13 +242,7 @@ def _get_dag_run_no_create_reason(dr, reprocess_behavior: ReprocessBehavior) -> 
     return non_create_reason
 
 
-def _validate_backfill_params(
-    dag: SerializedDAG,
-    reverse: bool,
-    from_date: datetime,
-    to_date: datetime,
-    reprocess_behavior: ReprocessBehavior | None,
-) -> None:
+def _validate_backfill_params(dag, reverse, from_date, to_date, reprocess_behavior: ReprocessBehavior | None):
     depends_on_past = any(x.depends_on_past for x in dag.tasks)
     if depends_on_past:
         if reverse is True:
@@ -269,15 +259,7 @@ def _validate_backfill_params(
         raise InvalidBackfillDate("Backfill cannot be executed for future dates.")
 
 
-def _do_dry_run(
-    *,
-    dag_id: str,
-    from_date: datetime,
-    to_date: datetime,
-    reverse: bool,
-    reprocess_behavior: ReprocessBehavior,
-    session: Session,
-) -> Sequence[datetime]:
+def _do_dry_run(*, dag_id, from_date, to_date, reverse, reprocess_behavior, session) -> list[datetime]:
     from airflow.models import DagModel
     from airflow.models.serialized_dag import SerializedDagModel
 
@@ -299,7 +281,7 @@ def _do_dry_run(
         to_date=to_date,
         reverse=reverse,
     )
-    logical_dates: list[datetime] = []
+    logical_dates = []
     for info in dagrun_info_list:
         dr = session.scalar(
             statement=_get_latest_dag_run_row_query(dag_id=dag_id, info=info, session=session),
@@ -318,13 +300,13 @@ def _create_backfill_dag_run(
     dag: SerializedDAG,
     info: DagRunInfo,
     reprocess_behavior: ReprocessBehavior,
-    backfill_id: int,
-    dag_run_conf: dict | None,
-    backfill_sort_ordinal: int,
-    triggering_user_name: str | None,
-    run_on_latest_version: bool,
-    session: Session,
-) -> None:
+    backfill_id,
+    dag_run_conf,
+    backfill_sort_ordinal,
+    triggering_user_name,
+    run_on_latest_version,
+    session,
+):
     from airflow.models.dagrun import DagRun
 
     with session.begin_nested() as nested:
@@ -421,28 +403,20 @@ def _create_backfill_dag_run(
 
 def _get_info_list(
     *,
-    from_date: datetime,
-    to_date: datetime,
-    reverse: bool,
-    dag: SerializedDAG,
-) -> list[DagRunInfo]:
+    from_date,
+    to_date,
+    reverse,
+    dag,
+):
     infos = dag.iter_dagrun_infos_between(from_date, to_date)
     now = timezone.utcnow()
     dagrun_info_list = [x for x in infos if x.data_interval.end < now]
     if reverse:
-        dagrun_info_list = list(reversed(dagrun_info_list))
+        dagrun_info_list = reversed(dagrun_info_list)
     return dagrun_info_list
 
 
-def _handle_clear_run(
-    session: Session,
-    dag: SerializedDAG,
-    dr: DagRun,
-    info: DagRunInfo,
-    backfill_id: int,
-    sort_ordinal: int,
-    run_on_latest: bool = False,
-) -> None:
+def _handle_clear_run(session, dag, dr, info, backfill_id, sort_ordinal, run_on_latest=False):
     """Clear the existing DAG run and update backfill metadata."""
     from sqlalchemy.sql import update
 
@@ -489,7 +463,7 @@ def _create_backfill(
     triggering_user_name: str | None,
     reprocess_behavior: ReprocessBehavior | None = None,
     run_on_latest_version: bool = False,
-) -> Backfill:
+) -> Backfill | None:
     from airflow.models import DagModel
     from airflow.models.serialized_dag import SerializedDagModel
 
@@ -551,7 +525,7 @@ def _create_backfill(
                 info=info,
                 backfill_id=br.id,
                 dag_run_conf=br.dag_run_conf,
-                reprocess_behavior=ReprocessBehavior(br.reprocess_behavior),
+                reprocess_behavior=br.reprocess_behavior,
                 backfill_sort_ordinal=backfill_sort_ordinal,
                 triggering_user_name=br.triggering_user_name,
                 run_on_latest_version=run_on_latest_version,

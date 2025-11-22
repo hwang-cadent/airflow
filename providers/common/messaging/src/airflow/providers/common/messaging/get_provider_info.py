@@ -26,16 +26,9 @@ def get_provider_info():
         "package-name": "apache-airflow-providers-common-messaging",
         "name": "Common Messaging",
         "description": "``Common Messaging Provider``\n",
-        "integrations": [
-            {
-                "integration-name": "Common Messaging",
-                "external-doc-url": "https://airflow.apache.org/docs/apache-airflow-providers-common-messaging/",
-                "tags": ["software"],
-            }
-        ],
         "triggers": [
             {
-                "integration-name": "Common Messaging",
+                "integration-name": "Message queue",
                 "python-modules": ["airflow.providers.common.messaging.triggers.msg_queue"],
             }
         ],

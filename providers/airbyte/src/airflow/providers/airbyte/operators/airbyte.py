@@ -27,10 +27,10 @@ from airflow.configuration import conf
 from airflow.exceptions import AirflowException
 from airflow.providers.airbyte.hooks.airbyte import AirbyteHook
 from airflow.providers.airbyte.triggers.airbyte import AirbyteSyncTrigger
-from airflow.providers.common.compat.sdk import BaseOperator
+from airflow.providers.airbyte.version_compat import BaseOperator
 
 if TYPE_CHECKING:
-    from airflow.providers.common.compat.sdk import Context
+    from airflow.providers.airbyte.version_compat import Context
 
 
 class AirbyteTriggerSyncOperator(BaseOperator):

@@ -19,7 +19,7 @@
 import type { TFunction } from "i18next";
 
 import type { HITLDetail } from "openapi/requests/types.gen";
-import type { ParamSchema, ParamsSpec } from "src/queries/useDagParams";
+import type { ParamsSpec } from "src/queries/useDagParams";
 
 export type HITLResponseParams = {
   chosen_options?: Array<string>;
@@ -70,7 +70,7 @@ export const getHITLParamsDict = (
   searchParams: URLSearchParams,
 ): ParamsSpec => {
   const paramsDict: ParamsSpec = {};
-  const { preloadedHITLOptions } = getPreloadHITLFormData(searchParams, hitlDetail);
+  const { preloadedHITLOptions, preloadedHITLParams } = getPreloadHITLFormData(searchParams, hitlDetail);
   const isApprovalTask =
     hitlDetail.options.includes("Approve") &&
     hitlDetail.options.includes("Reject") &&
@@ -108,36 +108,27 @@ export const getHITLParamsDict = (
     const sourceParams = hitlDetail.response_received ? hitlDetail.params_input : hitlDetail.params;
 
     Object.entries(sourceParams ?? {}).forEach(([key, value]) => {
-      if (!hitlDetail.params) {
-        return;
-      }
-      const paramData = hitlDetail.params[key] as ParamsSpec | undefined;
-
-      const description: string =
-        paramData && typeof paramData.description === "string" ? paramData.description : "";
-
-      const schema: ParamSchema = {
-        const: undefined,
-        description_md: "",
-        enum: undefined,
-        examples: undefined,
-        format: undefined,
-        items: undefined,
-        maximum: undefined,
-        maxLength: undefined,
-        minimum: undefined,
-        minLength: undefined,
-        section: undefined,
-        title: key,
-        type: typeof value === "number" ? "number" : "string",
-        values_display: undefined,
-        ...(paramData?.schema && typeof paramData.schema === "object" ? paramData.schema : {}),
-      };
+      const valueType = typeof value === "number" ? "number" : "string";
 
       paramsDict[key] = {
-        description,
-        schema,
-        value: paramData?.value ?? value,
+        description: "",
+        schema: {
+          const: undefined,
+          description_md: "",
+          enum: undefined,
+          examples: undefined,
+          format: undefined,
+          items: undefined,
+          maximum: undefined,
+          maxLength: undefined,
+          minimum: undefined,
+          minLength: undefined,
+          section: undefined,
+          title: key,
+          type: valueType,
+          values_display: undefined,
+        },
+        value: preloadedHITLParams[key] ?? value,
       };
     });
   }

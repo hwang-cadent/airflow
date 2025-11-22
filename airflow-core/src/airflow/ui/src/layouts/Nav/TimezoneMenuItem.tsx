@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { Box, Icon } from "@chakra-ui/react";
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
@@ -49,10 +48,8 @@ export const TimezoneMenuItem = ({ onOpen }: { readonly onOpen: () => void }) =>
 
   return (
     <Menu.Item onClick={onOpen} value="timezone">
-      <Icon as={FiClock} boxSize={4} />
-      <Box flex="1">
-        {translate("timezone")}: {dayjs(time).tz(selectedTimezone).format("HH:mm z (Z)")}
-      </Box>
+      <FiClock size={20} style={{ marginRight: "8px" }} />
+      {translate("timezone")}: {dayjs(time).tz(selectedTimezone).format("HH:mm z (Z)")}
     </Menu.Item>
   );
 };

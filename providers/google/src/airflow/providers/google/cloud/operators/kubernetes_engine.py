@@ -76,7 +76,7 @@ if TYPE_CHECKING:
     from kubernetes.client.models import V1Job
     from pendulum import DateTime
 
-    from airflow.providers.common.compat.sdk import Context
+    from airflow.utils.context import Context
 
 KUBE_CONFIG_ENV_VAR = "KUBECONFIG"
 

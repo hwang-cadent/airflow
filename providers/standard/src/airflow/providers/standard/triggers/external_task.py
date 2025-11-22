@@ -18,11 +18,10 @@ from __future__ import annotations
 
 import asyncio
 import typing
-from collections.abc import Collection
 from typing import Any
 
 from asgiref.sync import sync_to_async
-from sqlalchemy import func, select
+from sqlalchemy import func
 
 from airflow.models import DagRun
 from airflow.providers.standard.utils.sensor_helper import _get_count
@@ -61,9 +60,9 @@ class WorkflowTrigger(BaseTrigger):
         logical_dates: list[datetime] | None = None,
         external_task_ids: typing.Collection[str] | None = None,
         external_task_group_id: str | None = None,
-        failed_states: Collection[str] | None = None,
-        skipped_states: Collection[str] | None = None,
-        allowed_states: Collection[str] | None = None,
+        failed_states: typing.Iterable[str] | None = None,
+        skipped_states: typing.Iterable[str] | None = None,
+        allowed_states: typing.Iterable[str] | None = None,
         poke_interval: float = 2.0,
         soft_fail: bool = False,
         **kwargs,
@@ -130,41 +129,43 @@ class WorkflowTrigger(BaseTrigger):
             self.log.info("Sleeping for %s seconds", self.poke_interval)
             await asyncio.sleep(self.poke_interval)
 
-    async def _get_count_af_3(self, states: Collection[str] | None) -> int:
+    async def _get_count_af_3(self, states):
         from airflow.providers.standard.utils.sensor_helper import _get_count_by_matched_states
         from airflow.sdk.execution_time.task_runner import RuntimeTaskInstance
 
+        params = {
+            "dag_id": self.external_dag_id,
+            "logical_dates": self.logical_dates,
+            "run_ids": self.run_ids,
+        }
         if self.external_task_ids:
             count = await sync_to_async(RuntimeTaskInstance.get_ti_count)(
-                dag_id=self.external_dag_id,
-                task_ids=list(self.external_task_ids),
-                logical_dates=self.logical_dates,
-                run_ids=self.run_ids,
-                states=list(states) if states else None,
+                task_ids=self.external_task_ids,
+                states=states,
+                **params,
             )
-            return int(count / len(self.external_task_ids))
-        if self.external_task_group_id:
+        elif self.external_task_group_id:
             run_id_task_state_map = await sync_to_async(RuntimeTaskInstance.get_task_states)(
-                dag_id=self.external_dag_id,
                 task_group_id=self.external_task_group_id,
-                logical_dates=self.logical_dates,
-                run_ids=self.run_ids,
+                **params,
             )
             count = await sync_to_async(_get_count_by_matched_states)(
                 run_id_task_state_map=run_id_task_state_map,
-                states=states or [],
+                states=states,
             )
-            return count
-        count = await sync_to_async(RuntimeTaskInstance.get_dr_count)(
-            dag_id=self.external_dag_id,
-            logical_dates=self.logical_dates,
-            run_ids=self.run_ids,
-            states=list(states) if states else None,
-        )
+        else:
+            count = await sync_to_async(RuntimeTaskInstance.get_dr_count)(
+                dag_id=self.external_dag_id,
+                logical_dates=self.logical_dates,
+                run_ids=self.run_ids,
+                states=states,
+            )
+        if self.external_task_ids:
+            return count / len(self.external_task_ids)
         return count
 
     @sync_to_async
-    def _get_count(self, states: Collection[str] | None) -> int:
+    def _get_count(self, states: typing.Iterable[str] | None) -> int:
         """
         Get the count of records against dttm filter and states. Async wrapper for _get_count.
 
@@ -227,8 +228,8 @@ class DagStateTrigger(BaseTrigger):
             runs_ids_or_dates = len(self.execution_dates)
 
         if AIRFLOW_V_3_0_PLUS:
-            data = await self.validate_count_dags_af_3(runs_ids_or_dates_len=runs_ids_or_dates)
-            yield TriggerEvent(data)
+            event = await self.validate_count_dags_af_3(runs_ids_or_dates_len=runs_ids_or_dates)
+            yield TriggerEvent(event)
             return
         else:
             while True:
@@ -238,7 +239,7 @@ class DagStateTrigger(BaseTrigger):
                     return
                 await asyncio.sleep(self.poll_interval)
 
-    async def validate_count_dags_af_3(self, runs_ids_or_dates_len: int = 0) -> dict[str, typing.Any]:
+    async def validate_count_dags_af_3(self, runs_ids_or_dates_len: int = 0) -> tuple[str, dict[str, Any]]:
         from airflow.sdk.execution_time.task_runner import RuntimeTaskInstance
 
         cls_path, data = self.serialize()
@@ -258,7 +259,7 @@ class DagStateTrigger(BaseTrigger):
                             run_id=run_id,
                         )
                         data[run_id] = state
-                        return data
+                        return cls_path, data
             await asyncio.sleep(self.poll_interval)
 
     if not AIRFLOW_V_3_0_PLUS:
@@ -269,18 +270,17 @@ class DagStateTrigger(BaseTrigger):
         def count_dags(self, *, session: Session = NEW_SESSION) -> int:
             """Count how many dag runs in the database match our criteria."""
             _dag_run_date_condition = (
-                DagRun.run_id.in_(self.run_ids or [])
+                DagRun.run_id.in_(self.run_ids)
                 if AIRFLOW_V_3_0_PLUS
                 else DagRun.execution_date.in_(self.execution_dates)
             )
-            stmt = (
-                select(func.count())
-                .select_from(DagRun)
-                .where(
+            count = (
+                session.query(func.count("*"))  # .count() is inefficient
+                .filter(
                     DagRun.dag_id == self.dag_id,
                     DagRun.state.in_(self.states),
                     _dag_run_date_condition,
                 )
+                .scalar()
             )
-            result = session.execute(stmt).scalar()
-            return result or 0
+            return typing.cast("int", count)

@@ -16,7 +16,6 @@
 # under the License.
 from __future__ import annotations
 
-from collections.abc import Collection
 from typing import TYPE_CHECKING, Any, cast
 
 from sqlalchemy import func, select, tuple_
@@ -28,7 +27,7 @@ from airflow.utils.session import NEW_SESSION, provide_session
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
-    from sqlalchemy.sql import Select
+    from sqlalchemy.sql import Executable
 
 
 @provide_session
@@ -60,7 +59,6 @@ def _get_count(
             session.scalar(
                 _count_stmt(TI, states, dttm_filter, external_dag_id).where(TI.task_id.in_(external_task_ids))
             )
-            or 0
         ) / len(external_task_ids)
     elif external_task_group_id:
         external_task_group_task_ids = _get_external_task_group_task_ids(
@@ -70,25 +68,20 @@ def _get_count(
             count = 0
         else:
             count = (
-                (
-                    session.scalar(
-                        _count_stmt(TI, states, dttm_filter, external_dag_id).where(
-                            tuple_(TI.task_id, TI.map_index).in_(external_task_group_task_ids)
-                        )
+                session.scalar(
+                    _count_stmt(TI, states, dttm_filter, external_dag_id).where(
+                        tuple_(TI.task_id, TI.map_index).in_(external_task_group_task_ids)
                     )
-                    or 0
                 )
                 / len(external_task_group_task_ids)
                 * len(dttm_filter)
             )
     else:
-        count = session.scalar(_count_stmt(DR, states, dttm_filter, external_dag_id)) or 0
+        count = session.scalar(_count_stmt(DR, states, dttm_filter, external_dag_id))
     return cast("int", count)
 
 
-def _count_stmt(
-    model: type[DagRun] | type[TaskInstance], states: list[str], dttm_filter: list[Any], external_dag_id: str
-) -> Select[tuple[int]]:
+def _count_stmt(model, states, dttm_filter, external_dag_id) -> Executable:
     """
     Get the count of records against dttm filter and states.
 
@@ -104,9 +97,7 @@ def _count_stmt(
     )
 
 
-def _get_external_task_group_task_ids(
-    dttm_filter: list[Any], external_task_group_id: str, external_dag_id: str, session: Session
-) -> list[tuple[str, int]]:
+def _get_external_task_group_task_ids(dttm_filter, external_task_group_id, external_dag_id, session):
     """
     Get the count of records against dttm filter and states.
 
@@ -116,8 +107,6 @@ def _get_external_task_group_task_ids(
     :param session: airflow session object
     """
     refreshed_dag_info = SerializedDagModel.get_dag(external_dag_id, session=session)
-    if not refreshed_dag_info:
-        return [(external_task_group_id, -1)]
     task_group = refreshed_dag_info.task_group_dict.get(external_task_group_id)
 
     if task_group:
@@ -140,7 +129,7 @@ def _get_external_task_group_task_ids(
 
 def _get_count_by_matched_states(
     run_id_task_state_map: dict[str, dict[str, Any]],
-    states: Collection[str],
+    states: list[str],
 ):
     count = 0
     for _, task_states in run_id_task_state_map.items():

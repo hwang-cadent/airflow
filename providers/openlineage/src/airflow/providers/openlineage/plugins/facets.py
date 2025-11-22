@@ -80,7 +80,7 @@ class AirflowStateRunFacet(RunFacet):
     """
 
     dagRunState: str
-    tasksState: dict[str, str | None]
+    tasksState: dict[str, str]
     tasksDuration: dict[str, float]
 
 

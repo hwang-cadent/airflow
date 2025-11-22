@@ -19,7 +19,6 @@ from __future__ import annotations
 import itertools
 import json
 import logging
-from datetime import datetime
 
 import pendulum
 from fastapi import Request
@@ -158,10 +157,7 @@ def action_logging(event: str | None = None):
             logical_date_value = request.query_params.get("logical_date")
             if logical_date_value:
                 try:
-                    logical_date = pendulum.parse(logical_date_value, strict=False)
-                    if not isinstance(logical_date, datetime):
-                        raise ParserError
-                    log.logical_date = logical_date
+                    log.logical_date = pendulum.parse(logical_date_value, strict=False)
                 except ParserError:
                     logger.exception("Failed to parse logical_date from the request: %s", logical_date_value)
             else:

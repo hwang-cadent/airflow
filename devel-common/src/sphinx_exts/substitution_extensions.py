@@ -83,8 +83,8 @@ class SubstitutionCodeBlockTransform(SphinxTransform):
                         new_text = new_text.replace(f"|{name}|", replacement)
                     # Only replace if the text actually changed
                     if new_text != str(child):
-                        child_new = nodes.Text(new_text)
-                        node.replace(old_child, child_new)
+                        child = nodes.Text(new_text)
+                        node.replace(old_child, child)
                 # For non-Text nodes, do not replace
 
             # The highlighter checks this -- without this, it will refuse to apply highlighting

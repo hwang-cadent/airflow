@@ -20,7 +20,8 @@
       "all": "Alles",
       "paused": "Gepauzeerd"
     },
-    "runIdPatternFilter": "Zoek Dag Runs"
+    "runIdPatternFilter": "Zoek Dag Runs",
+    "triggeringUserNameFilter": "Zoek op Triggering User"
   },
   "ownerLink": "Eigenaarslink voor {{owner}}",
   "runAndTaskActions": {

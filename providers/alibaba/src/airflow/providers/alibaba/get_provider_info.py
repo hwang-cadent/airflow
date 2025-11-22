@@ -40,12 +40,6 @@ def get_provider_info():
                 "how-to-guide": ["/docs/apache-airflow-providers-alibaba/operators/analyticdb_spark.rst"],
                 "tags": ["alibaba"],
             },
-            {
-                "integration-name": "Alibaba Cloud MaxCompute",
-                "external-doc-url": "https://www.alibabacloud.com/help/en/dataworks/developer-reference/maxcompute",
-                "how-to-guide": ["/docs/apache-airflow-providers-alibaba/operators/oss.rst"],
-                "tags": ["alibaba"],
-            },
         ],
         "operators": [
             {
@@ -74,14 +68,15 @@ def get_provider_info():
         "hooks": [
             {
                 "integration-name": "Alibaba Cloud OSS",
-                "python-modules": [
-                    "airflow.providers.alibaba.cloud.hooks.oss",
-                    "airflow.providers.alibaba.cloud.hooks.base_alibaba",
-                ],
+                "python-modules": ["airflow.providers.alibaba.cloud.hooks.oss"],
             },
             {
                 "integration-name": "Alibaba Cloud AnalyticDB Spark",
                 "python-modules": ["airflow.providers.alibaba.cloud.hooks.analyticdb_spark"],
+            },
+            {
+                "integration-name": "Alibaba Cloud",
+                "python-modules": ["airflow.providers.alibaba.cloud.hooks.base_alibaba"],
             },
             {
                 "integration-name": "Alibaba Cloud MaxCompute",

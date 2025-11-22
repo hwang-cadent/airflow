@@ -59,7 +59,6 @@ Committers
 - Felix Uellendall (@feluelle)
 - Fokko Driesprong (@fokko)
 - Gopal Dirisala (@dirrao)
-- Guan-Ming (Wesley) Chiu (@guan404ming)
 - Hitesh Shah (@hiteshs)
 - Hussein Awala (@hussein-awala)
 - Jakob Homan (@jghoman)

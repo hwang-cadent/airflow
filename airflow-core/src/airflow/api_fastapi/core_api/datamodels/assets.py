@@ -17,10 +17,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
 from datetime import datetime
 
-from pydantic import AliasPath, ConfigDict, Field, JsonValue, NonNegativeInt, field_validator
+from pydantic import AliasPath, ConfigDict, Field, NonNegativeInt, field_validator
 
 from airflow._shared.secrets_masker import redact
 from airflow.api_fastapi.core_api.base import BaseModel, StrictBaseModel
@@ -74,7 +73,7 @@ class AssetResponse(BaseModel):
     name: str
     uri: str
     group: str
-    extra: dict[str, JsonValue] | None = None
+    extra: dict | None = None
     created_at: datetime
     updated_at: datetime
     scheduled_dags: list[DagScheduleAssetReference]
@@ -108,7 +107,7 @@ class AssetAliasResponse(BaseModel):
 class AssetAliasCollectionResponse(BaseModel):
     """Asset alias collection response."""
 
-    asset_aliases: Iterable[AssetAliasResponse]
+    asset_aliases: list[AssetAliasResponse]
     total_entries: int
 
 
@@ -133,14 +132,13 @@ class AssetEventResponse(BaseModel):
     uri: str | None = Field(alias="uri", default=None)
     name: str | None = Field(alias="name", default=None)
     group: str | None = Field(alias="group", default=None)
-    extra: dict[str, JsonValue] | None = None
+    extra: dict | None = None
     source_task_id: str | None = None
     source_dag_id: str | None = None
     source_run_id: str | None = None
     source_map_index: int
     created_dagruns: list[DagRunAssetReference]
     timestamp: datetime
-    partition_key: str | None = None
 
     @field_validator("extra", mode="after")
     @classmethod
@@ -151,7 +149,7 @@ class AssetEventResponse(BaseModel):
 class AssetEventCollectionResponse(BaseModel):
     """Asset event collection response."""
 
-    asset_events: Iterable[AssetEventResponse]
+    asset_events: list[AssetEventResponse]
     total_entries: int
 
 
@@ -175,7 +173,6 @@ class CreateAssetEventsBody(StrictBaseModel):
     """Create asset events request."""
 
     asset_id: int
-    partition_key: str | None = None
     extra: dict = Field(default_factory=dict)
 
     @field_validator("extra", mode="after")

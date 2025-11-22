@@ -28,11 +28,14 @@ from botocore.config import Config
 
 from airflow.exceptions import AirflowException
 from airflow.providers.amazon.aws.utils import trim_none_values
-from airflow.providers.amazon.version_compat import NOTSET, ArgNotSet
 from airflow.utils.log.logging_mixin import LoggingMixin
+from airflow.utils.types import NOTSET, ArgNotSet
 
 if TYPE_CHECKING:
-    from airflow.providers.common.compat.sdk import Connection
+    try:
+        from airflow.sdk import Connection
+    except ImportError:
+        from airflow.models.connection import Connection  # type: ignore[assignment]
 
 
 @dataclass

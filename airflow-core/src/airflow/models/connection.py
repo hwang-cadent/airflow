@@ -158,6 +158,7 @@ class Connection(Base, LoggingMixin):
         team_id: str | None = None,
     ):
         super().__init__()
+        self.conn_id = sanitize_conn_id(conn_id)
         self.description = description
         if extra and not isinstance(extra, str):
             extra = json.dumps(extra)
@@ -170,20 +171,13 @@ class Connection(Base, LoggingMixin):
         if uri:
             self._parse_from_uri(uri)
         else:
-            if conn_type is not None:
-                self.conn_type = conn_type
-
+            self.conn_type = conn_type
             self.host = host
             self.login = login
             self.password = password
             self.schema = schema
             self.port = port
             self.extra = extra
-
-        if conn_id is not None:
-            sanitized_id = sanitize_conn_id(conn_id)
-            if sanitized_id is not None:
-                self.conn_id = sanitized_id
         if self.extra:
             self._validate_extra(self.extra, self.conn_id)
 
@@ -279,9 +273,6 @@ class Connection(Base, LoggingMixin):
             uri = f"{self.conn_type.lower().replace('_', '-')}://"
         else:
             uri = "//"
-
-        host_to_use: str | None
-        protocol_to_add: str | None
 
         if self.host and "://" in self.host:
             protocol, host = self.host.split("://", 1)

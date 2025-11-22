@@ -18,8 +18,6 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import computed_field
-
 from airflow.api_fastapi.core_api.base import BaseModel
 from airflow.utils.state import DagRunState
 
@@ -35,9 +33,3 @@ class DAGRunLightResponse(BaseModel):
     start_date: datetime | None
     end_date: datetime | None
     state: DagRunState
-
-    @computed_field
-    def duration(self) -> float | None:
-        if self.end_date and self.start_date:
-            return (self.end_date - self.start_date).total_seconds()
-        return None

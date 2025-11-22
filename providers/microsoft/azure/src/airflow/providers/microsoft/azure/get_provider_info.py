@@ -37,7 +37,6 @@ def get_provider_info():
             {
                 "integration-name": "Microsoft Azure Blob Storage",
                 "external-doc-url": "https://azure.microsoft.com/en-us/services/storage/blobs/",
-                "how-to-guide": ["/docs/apache-airflow-providers-microsoft-azure/sensors/wasb_sensors.rst"],
                 "logo": "/docs/integration-logos/Blob-Storage.svg",
                 "tags": ["azure"],
             },
@@ -50,9 +49,6 @@ def get_provider_info():
             {
                 "integration-name": "Microsoft Azure Cosmos DB",
                 "external-doc-url": "https://azure.microsoft.com/en-us/services/cosmos-db/",
-                "how-to-guide": [
-                    "/docs/apache-airflow-providers-microsoft-azure/sensors/cosmos_document_sensor.rst"
-                ],
                 "logo": "/docs/integration-logos/Azure-Cosmos-DB.svg",
                 "tags": ["azure"],
             },
@@ -121,10 +117,7 @@ def get_provider_info():
                 "integration-name": "Microsoft Graph API",
                 "external-doc-url": "https://learn.microsoft.com/en-us/graph/use-the-api/",
                 "logo": "/docs/integration-logos/Microsoft-Graph-API.png",
-                "how-to-guide": [
-                    "/docs/apache-airflow-providers-microsoft-azure/operators/msgraph.rst",
-                    "/docs/apache-airflow-providers-microsoft-azure/sensors/msgraph.rst",
-                ],
+                "how-to-guide": ["/docs/apache-airflow-providers-microsoft-azure/operators/msgraph.rst"],
                 "tags": ["azure"],
             },
             {

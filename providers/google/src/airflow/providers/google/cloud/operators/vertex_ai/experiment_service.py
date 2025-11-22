@@ -30,7 +30,7 @@ from airflow.providers.google.cloud.hooks.vertex_ai.experiment_service import (
 from airflow.providers.google.cloud.operators.cloud_base import GoogleCloudBaseOperator
 
 if TYPE_CHECKING:
-    from airflow.providers.common.compat.sdk import Context
+    from airflow.utils.context import Context
 
 
 class CreateExperimentOperator(GoogleCloudBaseOperator):

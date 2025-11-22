@@ -75,7 +75,7 @@ export const RecentRuns = ({
               </Text>
             </Box>
           }
-          key={run.run_id}
+          key={run.dag_run_id}
           positioning={{
             offset: {
               crossAxis: 5,
@@ -84,7 +84,7 @@ export const RecentRuns = ({
             placement: "bottom-start",
           }}
         >
-          <Link to={`/dags/${run.dag_id}/runs/${run.run_id}/`}>
+          <Link to={`/dags/${run.dag_id}/runs/${run.dag_run_id}/`}>
             <Flex
               alignItems="center"
               bg={`${run.state}.solid`}

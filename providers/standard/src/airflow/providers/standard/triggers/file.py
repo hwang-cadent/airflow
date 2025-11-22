@@ -79,7 +79,7 @@ class FileTrigger(BaseTrigger):
                     self.log.info("Found File %s last modified: %s", path, mod_time)
                     yield TriggerEvent(True)
                     return
-                for _, _, files in os.walk(path):
+                for _, _, files in os.walk(self.filepath):
                     if files:
                         yield TriggerEvent(True)
                         return

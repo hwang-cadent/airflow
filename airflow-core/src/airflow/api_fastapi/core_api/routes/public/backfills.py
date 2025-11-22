@@ -85,8 +85,9 @@ def list_backfills(
         limit=limit,
         session=session,
     )
+    backfills = session.scalars(select_stmt)
     return BackfillCollectionResponse(
-        backfills=session.scalars(select_stmt),
+        backfills=backfills,
         total_entries=total_entries,
     )
 

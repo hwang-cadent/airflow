@@ -252,14 +252,6 @@ ARG_AUTH_PASSWORD = Arg(
     nargs="?",
 )
 
-# Dag Commands Args
-ARG_DAG_ID = Arg(
-    flags=("--dag-id",),
-    type=str,
-    dest="dag_id",
-    help="The DAG ID of the DAG to pause or unpause",
-)
-
 # Variable Commands Args
 ARG_VARIABLE_ACTION_ON_EXISTING_KEY = Arg(
     flags=("-a", "--action-on-existing-key"),
@@ -812,27 +804,6 @@ CONNECTION_COMMANDS = (
     ),
 )
 
-DAG_COMMANDS = (
-    ActionCommand(
-        name="pause",
-        help="Pause a Dag",
-        func=lazy_load_command("airflowctl.ctl.commands.dag_command.pause"),
-        args=(
-            ARG_DAG_ID,
-            ARG_OUTPUT,
-        ),
-    ),
-    ActionCommand(
-        name="unpause",
-        help="Unpause a Dag",
-        func=lazy_load_command("airflowctl.ctl.commands.dag_command.unpause"),
-        args=(
-            ARG_DAG_ID,
-            ARG_OUTPUT,
-        ),
-    ),
-)
-
 POOL_COMMANDS = (
     ActionCommand(
         name="import",
@@ -882,11 +853,6 @@ core_commands: list[CLICommand] = [
         name="connections",
         help="Manage Airflow connections",
         subcommands=CONNECTION_COMMANDS,
-    ),
-    GroupCommand(
-        name="dags",
-        help="Manage Airflow Dags",
-        subcommands=DAG_COMMANDS,
     ),
     GroupCommand(
         name="pools",

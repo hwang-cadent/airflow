@@ -16,7 +16,6 @@
 # under the License.
 from __future__ import annotations
 
-from collections.abc import Iterable
 from datetime import datetime
 from typing import Any
 
@@ -78,7 +77,7 @@ class XComResponseString(XComResponse):
 class XComCollectionResponse(BaseModel):
     """XCom Collection serializer for responses."""
 
-    xcom_entries: Iterable[XComResponse]
+    xcom_entries: list[XComResponse]
     total_entries: int
 
 

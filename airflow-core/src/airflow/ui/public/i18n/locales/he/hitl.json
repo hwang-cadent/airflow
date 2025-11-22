@@ -1,8 +1,5 @@
 {
   "filters": {
-    "body": "גוף",
-    "createdAtFrom": "נוצר בתאריך מ-",
-    "createdAtTo": "נוצר בתאריך עד",
     "response": {
       "all": "הכל",
       "pending": "ממתין",
@@ -17,13 +14,11 @@
   "requiredActionCount_two": "פעולות נדרשות ({{count}})",
   "requiredActionState": "מצב פעולה נדרשת",
   "response": {
-    "created": "התגובה נוצרה ב",
     "error": "התגובה נכשלה",
     "optionsDescription": "בחר את האפשרויות למופע המשימה הזה",
     "optionsLabel": "אפשרויות",
     "received": "תגובה התקבלה ב",
     "respond": "הגב",
-    "responded_by_user_name": "נענה על ידי",
     "success": "התגובה של {{taskId}} הצליחה",
     "title": "מופע משימה ידנית - {{taskId}}"
   },

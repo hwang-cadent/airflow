@@ -21,7 +21,7 @@ try:
     from sqlalchemy.orm import mapped_column
 except ImportError:
     # fallback for SQLAlchemy < 2.0
-    def mapped_column(*args, **kwargs):  # type: ignore[misc]
+    def mapped_column(*args, **kwargs):
         from sqlalchemy import Column
 
         return Column(*args, **kwargs)

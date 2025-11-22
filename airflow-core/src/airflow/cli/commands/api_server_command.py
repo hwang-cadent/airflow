@@ -33,7 +33,6 @@ from airflow.cli.commands.daemon_utils import run_command_with_daemon_option
 from airflow.exceptions import AirflowConfigException
 from airflow.typing_compat import ParamSpec
 from airflow.utils import cli as cli_utils
-from airflow.utils.memray_utils import MemrayTraceComponents, enable_memray_trace
 from airflow.utils.providers_configuration_loader import providers_configuration_loaded
 
 PS = ParamSpec("PS")
@@ -49,7 +48,6 @@ if TYPE_CHECKING:
 # more info here: https://github.com/benoitc/gunicorn/issues/1877#issuecomment-1911136399
 
 
-@enable_memray_trace(component=MemrayTraceComponents.api)
 def _run_api_server(args, apps: str, num_workers: int, worker_timeout: int, proxy_headers: bool):
     """Run the API server."""
     log.info(
@@ -82,7 +80,6 @@ def _run_api_server(args, apps: str, num_workers: int, worker_timeout: int, prox
         "workers": num_workers,
         "timeout_keep_alive": worker_timeout,
         "timeout_graceful_shutdown": worker_timeout,
-        "timeout_worker_healthcheck": worker_timeout,
         "ssl_keyfile": ssl_key,
         "ssl_certfile": ssl_cert,
         "access_log": True,
@@ -139,7 +136,7 @@ def api_server(args: Namespace):
 
     get_signing_args()
 
-    if cli_utils.should_enable_hot_reload(args):
+    if args.dev:
         print(f"Starting the API server on port {args.port} and host {args.host} in development mode.")
         log.warning("Running in dev mode, ignoring uvicorn args")
         from fastapi_cli.cli import _run

@@ -1,8 +1,5 @@
 {
   "filters": {
-    "body": "Cuerpo",
-    "createdAtFrom": "Creado Desde",
-    "createdAtTo": "Creado Hasta",
     "response": {
       "all": "Todas",
       "pending": "Pendientes",
@@ -17,13 +14,11 @@
   "requiredActionCount_other": "Acciones Requeridas ({{count}})",
   "requiredActionState": "Estado de Acción Requerida",
   "response": {
-    "created": "Respuesta creada el ",
     "error": "Error en la Respuesta",
     "optionsDescription": "Elige tus opciones para esta instancia de tarea",
     "optionsLabel": "Opciones",
     "received": "Respuesta recibida en ",
     "respond": "Responder",
-    "responded_by_user_name": "Respondido por (Nombre de usuario)",
     "success": "Respuesta de {{taskId}} exitosa",
     "title": "Instancia de Tarea Humana - {{taskId}}"
   },

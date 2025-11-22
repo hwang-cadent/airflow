@@ -29,7 +29,6 @@ from sqlalchemy_utils import UUIDType
 
 from airflow._shared.timezones import timezone
 from airflow.models import Base
-from airflow.stats import Stats
 from airflow.utils.sqlalchemy import ExtendedJSON, UtcDateTime, mapped_column
 
 if TYPE_CHECKING:
@@ -50,19 +49,12 @@ class CallbackState(str, Enum):
     SUCCESS = "success"
     FAILED = "failed"
 
-    def __str__(self) -> str:
-        return self.value
-
-
-ACTIVE_STATES = frozenset((CallbackState.QUEUED, CallbackState.RUNNING))
-TERMINAL_STATES = frozenset((CallbackState.SUCCESS, CallbackState.FAILED))
-
 
 class CallbackType(str, Enum):
     """
     Types of Callbacks.
 
-    Used for figuring out what class to instantiate during deserialization.
+    Used for figuring out what class to instantiate while deserialization.
     """
 
     TRIGGERER = "triggerer"
@@ -93,7 +85,7 @@ class ImportPathCallbackDefProtocol(CallbackDefinitionProtocol, Protocol):
     """Protocol for callbacks that use the import path fetch method."""
 
     path: str
-    kwargs: dict
+    kwargs: dict | None
 
 
 @runtime_checkable
@@ -121,7 +113,7 @@ class Callback(Base):
     fetch_method: Mapped[str] = mapped_column(String(20), nullable=False)
 
     # Used by subclasses to store information about how to run the callback
-    data: Mapped[dict] = mapped_column(ExtendedJSON, nullable=False)
+    data: Mapped[dict] = mapped_column(ExtendedJSON)
 
     # State of the Callback of type: CallbackState. Can be null for instances of DagProcessorCallback.
     state: Mapped[str | None] = mapped_column(String(10))
@@ -139,49 +131,26 @@ class Callback(Base):
     trigger_id: Mapped[int] = mapped_column(Integer, ForeignKey("trigger.id"), nullable=True)
     trigger = relationship("Trigger", back_populates="callback", uselist=False)
 
-    def __init__(self, priority_weight: int = 1, prefix: str = "", **kwargs):
-        """
-        Initialize a Callback. This is the base class so it shouldn't usually need to be initialized.
-
-        :param priority_weight: Priority for callback execution (higher value -> higher priority)
-        :param prefix: Optional prefix for metric names
-        :param kwargs: Additional data emitted in metric tags
-        """
+    def __init__(self, priority_weight: int = 1):
         self.state = CallbackState.PENDING
         self.priority_weight = priority_weight
-        self.data = kwargs  # kwargs can be used to include additional info in metric tags
-        if prefix:
-            self.data["prefix"] = prefix
 
     def queue(self):
         self.state = CallbackState.QUEUED
 
-    def get_metric_info(self, status: CallbackState, result: Any) -> dict:
-        tags = {"result": result, **self.data}
-        tags.pop("prefix", None)
-
-        if "kwargs" in tags:
-            # Remove the context (if exists) to keep the tags simple
-            tags["kwargs"] = {k: v for k, v in tags["kwargs"].items() if k != "context"}
-
-        prefix = self.data.get("prefix", "")
-        name = f"{prefix}.callback_{status}" if prefix else f"callback_{status}"
-
-        return {"stat": name, "tags": tags}
-
     @staticmethod
-    def create_from_sdk_def(callback_def: CallbackDefinitionProtocol, **kwargs) -> Callback:
+    def create_from_sdk_def(callback_def: CallbackDefinitionProtocol) -> Callback:
         # Cannot check actual type using isinstance() because that would require SDK import
         match type(callback_def).__name__:
             case "AsyncCallback":
                 if TYPE_CHECKING:
                     assert isinstance(callback_def, ImportPathCallbackDefProtocol)
-                return TriggererCallback(callback_def, **kwargs)
+                return TriggererCallback(callback_def)
 
             case "SyncCallback":
                 if TYPE_CHECKING:
                     assert isinstance(callback_def, ImportPathExecutorCallbackDefProtocol)
-                return ExecutorCallback(callback_def, fetch_method=CallbackFetchMethod.IMPORT_PATH, **kwargs)
+                return ExecutorCallback(callback_def, fetch_method=CallbackFetchMethod.IMPORT_PATH)
 
             case _:
                 raise ValueError(f"Cannot handle Callback of type {type(callback_def)}")
@@ -193,44 +162,17 @@ class TriggererCallback(Callback):
     __mapper_args__ = {"polymorphic_identity": CallbackType.TRIGGERER}
 
     def __init__(self, callback_def: ImportPathCallbackDefProtocol, **kwargs):
-        """
-        Initialize a TriggererCallback from a callback definition.
-
-        :param callback_def: Callback definition with path and kwargs
-        :param kwargs: Passed to parent Callback.__init__ (see base class for details)
-        """
         super().__init__(**kwargs)
         self.fetch_method = CallbackFetchMethod.IMPORT_PATH
-        self.data |= callback_def.serialize()
-
-    def __repr__(self):
-        return f"{self.data['path']}({self.data['kwargs'] or ''}) on a triggerer"
+        self.data = callback_def.serialize()
 
     def queue(self):
-        from airflow.models.trigger import Trigger
-        from airflow.triggers.callback import CallbackTrigger
-
-        self.trigger = Trigger.from_object(
-            CallbackTrigger(
-                callback_path=self.data["path"],
-                callback_kwargs=self.data["kwargs"],
-            )
-        )
+        # TODO: queue the trigger
         super().queue()
 
     def handle_event(self, event: TriggerEvent, session: Session):
-        from airflow.triggers.callback import PAYLOAD_BODY_KEY, PAYLOAD_STATUS_KEY
-
-        if (status := event.payload.get(PAYLOAD_STATUS_KEY)) and status in (ACTIVE_STATES | TERMINAL_STATES):
-            self.state = status
-            if status in TERMINAL_STATES:
-                self.trigger = None
-                self.output = event.payload.get(PAYLOAD_BODY_KEY)
-                Stats.incr(**self.get_metric_info(status, self.output))
-
-            session.add(self)
-        else:
-            log.error("Unexpected event received: %s", event.payload)
+        # TODO: modify fields based on the event
+        pass
 
 
 class ExecutorCallback(Callback):
@@ -241,19 +183,9 @@ class ExecutorCallback(Callback):
     def __init__(
         self, callback_def: ImportPathExecutorCallbackDefProtocol, fetch_method: CallbackFetchMethod, **kwargs
     ):
-        """
-        Initialize an ExecutorCallback from a callback definition and fetch method.
-
-        :param callback_def: Callback definition with path, kwargs, and executor
-        :param fetch_method: Method to fetch the callback at runtime
-        :param kwargs: Passed to parent Callback.__init__ (see base class for details)
-        """
         super().__init__(**kwargs)
         self.fetch_method = fetch_method
-        self.data |= callback_def.serialize()
-
-    def __repr__(self):
-        return f"{self.data['path']}({self.data['kwargs'] or ''}) on {self.data.get('executor', 'default')} executor"
+        self.data = callback_def.serialize()
 
 
 class DagProcessorCallback(Callback):
@@ -262,12 +194,11 @@ class DagProcessorCallback(Callback):
     __mapper_args__ = {"polymorphic_identity": CallbackType.DAG_PROCESSOR}
 
     def __init__(self, priority_weight: int, callback: CallbackRequest):
-        """Initialize a DagProcessorCallback from a callback request."""
         super().__init__(priority_weight=priority_weight)
 
         self.fetch_method = CallbackFetchMethod.DAG_ATTRIBUTE
         self.state = None
-        self.data |= {"req_class": callback.__class__.__name__, "req_data": callback.to_json()}
+        self.data = {"req_class": callback.__class__.__name__, "req_data": callback.to_json()}
 
     def get_callback_request(self) -> CallbackRequest:
         module = import_module("airflow.callbacks.callback_requests")

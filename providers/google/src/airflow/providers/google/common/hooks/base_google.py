@@ -32,6 +32,7 @@ from subprocess import check_output
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 import google.auth
+import google.oauth2.service_account
 import google_auth_httplib2
 import requests
 import tenacity

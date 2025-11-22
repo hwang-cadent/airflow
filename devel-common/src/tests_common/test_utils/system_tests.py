@@ -19,7 +19,6 @@ from __future__ import annotations
 import logging
 import os
 from collections.abc import Callable
-from datetime import datetime
 from typing import TYPE_CHECKING
 
 import pytest
@@ -45,7 +44,7 @@ def get_test_run(dag, **test_kwargs):
             logger.warning("could not retrieve tasks that ran in the DAG, cannot display a summary")
             return
 
-        ti.sort(key=lambda x: x.end_date or datetime.max)
+        ti.sort(key=lambda x: x.end_date)
 
         headers = ["Task ID", "Status"]
         results = []

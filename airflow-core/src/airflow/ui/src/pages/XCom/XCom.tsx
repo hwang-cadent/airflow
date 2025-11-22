@@ -27,7 +27,6 @@ import { DataTable } from "src/components/DataTable";
 import { useTableURLState } from "src/components/DataTable/useTableUrlState";
 import { ErrorAlert } from "src/components/ErrorAlert";
 import { ExpandCollapseButtons } from "src/components/ExpandCollapseButtons";
-import Time from "src/components/Time";
 import { TruncatedText } from "src/components/TruncatedText";
 import { SearchParamsKeys, type SearchParamsKeysType } from "src/constants/searchParams";
 import { getTaskInstanceLink } from "src/utils/links";
@@ -72,7 +71,7 @@ const columns = (translate: (key: string) => string, open: boolean): Array<Colum
     header: translate("common:runId"),
   },
   {
-    accessorKey: "task_display_name",
+    accessorKey: "task_id",
     cell: ({ row: { original } }: { row: { original: XComResponse } }) => (
       <Link asChild color="fg.info" fontWeight="bold">
         <RouterLink
@@ -83,23 +82,17 @@ const columns = (translate: (key: string) => string, open: boolean): Array<Colum
             taskId: original.task_id,
           })}
         >
-          <TruncatedText text={original.task_display_name} />
+          <TruncatedText text={original.task_id} />
         </RouterLink>
       </Link>
     ),
     enableSorting: false,
-    header: translate("common:task_one"),
+    header: translate("common:taskId"),
   },
   {
     accessorKey: "map_index",
     enableSorting: false,
     header: translate("common:mapIndex"),
-  },
-  {
-    accessorKey: "timestamp",
-    cell: ({ row: { original } }) => <Time datetime={original.timestamp} />,
-    enableSorting: false,
-    header: translate("dashboard:timestamp"),
   },
   {
     cell: ({ row: { original } }) => (

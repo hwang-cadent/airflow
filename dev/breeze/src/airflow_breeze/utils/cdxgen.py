@@ -118,7 +118,7 @@ def fork_cdxgen_server(application_root_path, port=9090):
 
 
 def get_port_mapping(x):
-    # if we do not sleep here, then we could skip mapping for some process if it is handled
+    # if we do not sleep here, then we could skip mapping for some process if it is handle
     time.sleep(1)
     return multiprocessing.current_process().name, 8080 + x
 

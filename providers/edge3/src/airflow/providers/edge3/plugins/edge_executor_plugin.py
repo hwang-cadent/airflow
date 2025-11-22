@@ -66,7 +66,8 @@ else:
     from sqlalchemy import select
 
     from airflow.auth.managers.models.resource_details import AccessView
-    from airflow.utils.state import State, TaskInstanceState
+    from airflow.models.taskinstance import TaskInstanceState
+    from airflow.utils.state import State
     from airflow.utils.yaml import safe_load
     from airflow.www.auth import has_access_view
 
@@ -251,10 +252,18 @@ class EdgeExecutorPlugin(AirflowPlugin):
             fastapi_apps = [_get_api_endpoint()]
             react_apps = [
                 {
-                    "name": "Edge Executor",
+                    "name": "Edge Worker",
                     "bundle_url": _get_base_url_path("/edge_worker/static/main.umd.cjs"),
                     "destination": "nav",
-                    "url_route": "edge_executor",
+                    "url_route": "edge_worker",
+                    "category": "admin",
+                    "icon": _get_base_url_path("/edge_worker/res/cloud-computer.svg"),
+                    "icon_dark_mode": _get_base_url_path("/edge_worker/res/cloud-computer-dark.svg"),
+                },
+                {
+                    "name": "Edge Worker Jobs",
+                    "bundle_url": _get_base_url_path("/edge_worker/static/main.umd.cjs"),
+                    "url_route": "edge_jobs",
                     "category": "admin",
                     "icon": _get_base_url_path("/edge_worker/res/cloud-computer.svg"),
                     "icon_dark_mode": _get_base_url_path("/edge_worker/res/cloud-computer-dark.svg"),

@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     from google.api_core.retry import Retry
     from google.protobuf.message import Message
 
-    from airflow.providers.common.compat.sdk import Context
+    from airflow.utils.context import Context
 
 
 class GoogleAnalyticsAdminListAccountsOperator(GoogleCloudBaseOperator):

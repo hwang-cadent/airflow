@@ -61,9 +61,6 @@ class SpellingError(NamedTuple):
         )
         return left == right
 
-    def __hash__(self):
-        return hash((self.file_path, self.line_no, self.spelling, self.context_line, self.message))
-
     def __ne__(self, other):
         return not self == other
 

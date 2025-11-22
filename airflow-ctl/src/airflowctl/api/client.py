@@ -73,7 +73,6 @@ __all__ = [
     "provide_api_client",
     "NEW_API_CLIENT",
     "ClientKind",
-    "ServerResponseError",
 ]
 
 PS = ParamSpec("PS")

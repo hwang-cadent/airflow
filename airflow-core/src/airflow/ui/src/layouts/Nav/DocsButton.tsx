@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { Box, Icon, Link } from "@chakra-ui/react";
+import { Link } from "@chakra-ui/react";
 import { useTranslation } from "react-i18next";
 import { FiBookOpen, FiExternalLink } from "react-icons/fi";
 
@@ -61,7 +61,7 @@ export const DocsButton = ({
   return (
     <Menu.Root positioning={{ placement: "right" }}>
       <Menu.Trigger asChild>
-        <NavButton icon={FiBookOpen} title={translate("nav.docs")} />
+        <NavButton icon={<FiBookOpen size={28} />} title={translate("nav.docs")} />
       </Menu.Trigger>
       <Menu.Content>
         {links
@@ -73,18 +73,17 @@ export const DocsButton = ({
                 href={link.href}
                 rel="noopener noreferrer"
                 target="_blank"
-                textDecoration="none"
               >
-                <Box flex="1">{translate(`docs.${link.key}`)}</Box>
-                <Icon as={FiExternalLink} boxSize={4} color="fg.muted" />
+                {translate(`docs.${link.key}`)}
+                <FiExternalLink />
               </Link>
             </Menu.Item>
           ))}
         {version === undefined ? undefined : (
           <Menu.Item asChild key={version} value={version}>
             <Link aria-label={version} href={versionLink} rel="noopener noreferrer" target="_blank">
-              <Box flex="1">{version}</Box>
-              <Icon as={FiExternalLink} boxSize={4} color="fg.muted" />
+              {version}
+              <FiExternalLink />
             </Link>
           </Menu.Item>
         )}

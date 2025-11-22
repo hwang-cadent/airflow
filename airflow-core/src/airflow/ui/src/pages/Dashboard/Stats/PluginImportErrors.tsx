@@ -16,23 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { Box, Button, useDisclosure, Skeleton } from "@chakra-ui/react";
+import { Box, Text, Button, useDisclosure, Skeleton } from "@chakra-ui/react";
 import { useTranslation } from "react-i18next";
+import { FiChevronRight } from "react-icons/fi";
 import { LuPlug } from "react-icons/lu";
 
 import { usePluginServiceImportErrors } from "openapi/queries";
 import { ErrorAlert, type ExpandedApiError } from "src/components/ErrorAlert";
 import { StateBadge } from "src/components/StateBadge";
-import { StatsCard } from "src/components/StatsCard";
 
 import { PluginImportErrorsModal } from "./PluginImportErrorsModal";
 
 export const PluginImportErrors = ({ iconOnly = false }: { readonly iconOnly?: boolean }) => {
   const { onClose, onOpen, open } = useDisclosure();
-  const { i18n, t: translate } = useTranslation("admin");
+  const { t: translate } = useTranslation("admin");
   const { data, error, isLoading } = usePluginServiceImportErrors();
-
-  const isRTL = i18n.dir() === "rtl";
 
   const importErrorsCount = data?.total_entries ?? 0;
   const importErrors = data?.import_errors ?? [];
@@ -50,7 +48,7 @@ export const PluginImportErrors = ({ iconOnly = false }: { readonly iconOnly?: b
   }
 
   return (
-    <Box alignItems="center" display="flex">
+    <Box alignItems="center" display="flex" maxH="10px">
       <ErrorAlert error={error} />
       {iconOnly ? (
         <StateBadge
@@ -64,15 +62,23 @@ export const PluginImportErrors = ({ iconOnly = false }: { readonly iconOnly?: b
           {importErrorsCount}
         </StateBadge>
       ) : (
-        <StatsCard
-          colorScheme="failed"
-          count={importErrorsCount}
-          icon={<LuPlug />}
-          isLoading={isLoading}
-          isRTL={isRTL}
-          label={translate("plugins.importError", { count: importErrorsCount })}
+        <Button
+          alignItems="center"
+          borderRadius="md"
+          display="flex"
+          gap={2}
           onClick={onOpen}
-        />
+          variant="outline"
+        >
+          <StateBadge colorPalette="failed">
+            <LuPlug />
+            {importErrorsCount}
+          </StateBadge>
+          <Box alignItems="center" display="flex" gap={1}>
+            <Text fontWeight="bold">{translate("plugins.importError", { count: importErrorsCount })}</Text>
+            <FiChevronRight />
+          </Box>
+        </Button>
       )}
       <PluginImportErrorsModal importErrors={importErrors} onClose={onClose} open={open} />
     </Box>

@@ -24,7 +24,6 @@ CI_COMMANDS: dict[str, str | list[str]] = {
         "resource-check",
         "selective-check",
         "get-workflow-info",
-        "upgrade",
     ],
 }
 CI_PARAMETERS: dict[str, list[dict[str, str | list[str]]]] = {
@@ -67,14 +66,4 @@ CI_PARAMETERS: dict[str, list[dict[str, str | list[str]]]] = {
         }
     ],
     "breeze ci resource-check": [],
-    "breeze ci upgrade": [
-        {
-            "name": "Upgrade flags",
-            "options": [
-                "--target-branch",
-                "--create-pr",
-                "--switch-to-base",
-            ],
-        }
-    ],
 }

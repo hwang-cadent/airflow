@@ -25,7 +25,6 @@ import pendulum
 from google.protobuf.timestamp_pb2 import Timestamp
 
 from airflow.models.dagrun import DagRun
-from airflow.providers.common.compat.sdk import Context
 from airflow.providers.google.cloud.operators.workflows import (
     WorkflowsCancelExecutionOperator,
     WorkflowsCreateExecutionOperator,
@@ -40,6 +39,11 @@ from airflow.providers.google.cloud.operators.workflows import (
 from airflow.utils.hashlib_wrapper import md5
 
 from tests_common.test_utils.version_compat import AIRFLOW_V_3_0_PLUS
+
+if AIRFLOW_V_3_0_PLUS:
+    from airflow.sdk import Context
+else:
+    from airflow.utils.context import Context
 
 BASE_PATH = "airflow.providers.google.cloud.operators.workflows.{}"
 LOCATION = "europe-west1"

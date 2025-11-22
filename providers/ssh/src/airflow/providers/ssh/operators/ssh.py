@@ -24,13 +24,9 @@ from typing import TYPE_CHECKING
 
 from airflow.configuration import conf
 from airflow.exceptions import AirflowException, AirflowSkipException
-from airflow.providers.common.compat.sdk import BaseOperator
 from airflow.providers.ssh.hooks.ssh import SSHHook
-
-try:
-    from airflow.sdk.definitions._internal.types import NOTSET, ArgNotSet
-except ImportError:
-    from airflow.utils.types import NOTSET, ArgNotSet  # type: ignore[attr-defined,no-redef]
+from airflow.providers.ssh.version_compat import BaseOperator
+from airflow.utils.types import NOTSET, ArgNotSet
 
 if TYPE_CHECKING:
     from paramiko.client import SSHClient

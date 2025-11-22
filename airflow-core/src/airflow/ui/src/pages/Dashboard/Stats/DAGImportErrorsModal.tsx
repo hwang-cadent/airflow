@@ -39,15 +39,11 @@ export const DAGImportErrorsModal: React.FC<ImportDAGErrorModalProps> = ({ onClo
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data } = useImportErrorServiceGetImportErrors(
-    {
-      filenamePattern: searchQuery || undefined,
-      limit: PAGE_LIMIT,
-      offset: PAGE_LIMIT * (page - 1),
-    },
-    undefined,
-    { enabled: open },
-  );
+  const { data } = useImportErrorServiceGetImportErrors({
+    filenamePattern: searchQuery || undefined,
+    limit: PAGE_LIMIT,
+    offset: PAGE_LIMIT * (page - 1),
+  });
 
   const { t: translate } = useTranslation(["dashboard", "components"]);
 

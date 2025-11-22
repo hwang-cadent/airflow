@@ -20,7 +20,6 @@ from __future__ import annotations
 import contextlib
 import hashlib
 import itertools
-import json
 import logging
 import math
 import uuid
@@ -109,7 +108,8 @@ if TYPE_CHECKING:
     from sqlalchemy.engine import Connection as SAConnection, Engine
     from sqlalchemy.orm.session import Session
     from sqlalchemy.sql import Update
-    from sqlalchemy.sql.elements import ColumnElement
+    from sqlalchemy.sql.elements import BooleanClauseList
+    from sqlalchemy.sql.expression import ColumnOperators
 
     from airflow.models.dag import DagModel
     from airflow.models.dagrun import DagRun
@@ -259,10 +259,8 @@ def clear_task_instances(
         drs = session.scalars(
             select(DagRun).where(
                 or_(
-                    *(
-                        and_(DagRun.dag_id == dag_id, DagRun.run_id.in_(run_ids))
-                        for dag_id, run_ids in run_ids_by_dag_id.items()
-                    )
+                    and_(DagRun.dag_id == dag_id, DagRun.run_id.in_(run_ids))
+                    for dag_id, run_ids in run_ids_by_dag_id.items()
                 )
             )
         ).all()
@@ -315,7 +313,7 @@ def _log_state(*, task_instance: TaskInstance, lead_msg: str = "") -> None:
 
     :meta private:
     """
-    params: list[str | int] = [
+    params = [
         lead_msg,
         str(task_instance.state).upper(),
         task_instance.dag_id,
@@ -433,7 +431,7 @@ class TaskInstance(Base, LoggingMixin):
     _task_display_property_value: Mapped[str | None] = mapped_column(
         "task_display_name", String(2000), nullable=True
     )
-    dag_version_id: Mapped[str | uuid.UUID | None] = mapped_column(
+    dag_version_id: Mapped[str | None] = mapped_column(
         UUIDType(binary=False),
         ForeignKey("dag_version.id", ondelete="RESTRICT"),
         nullable=True,
@@ -464,7 +462,7 @@ class TaskInstance(Base, LoggingMixin):
         ),
     )
 
-    dag_model: Mapped[DagModel] = relationship(
+    dag_model: DagModel = relationship(
         "DagModel",
         primaryjoin="TaskInstance.dag_id == DagModel.dag_id",
         foreign_keys=dag_id,
@@ -512,15 +510,14 @@ class TaskInstance(Base, LoggingMixin):
         self.dag_id = task.dag_id
         self.task_id = task.task_id
         self.map_index = map_index
-
+        self.dag_version_id = dag_version_id
         self.refresh_from_task(task)
         if TYPE_CHECKING:
             assert self.task
         # init_on_load will config the log
         self.init_on_load()
 
-        if run_id is not None:
-            self.run_id = run_id
+        self.run_id = run_id
         self.try_number = 0
         self.max_tries = self.task.retries
         if not self.id:
@@ -534,7 +531,7 @@ class TaskInstance(Base, LoggingMixin):
         self.raw = False
         # can be changed when calling 'run'
         self.test_mode = False
-        self.dag_version_id = dag_version_id
+        self.context_carrier = {}
 
     def __hash__(self):
         return hash((self.task_id, self.dag_id, self.run_id, self.map_index))
@@ -664,6 +661,7 @@ class TaskInstance(Base, LoggingMixin):
             select(TaskInstance)
             .options(lazyload(TaskInstance.dag_run))  # lazy load dag run to avoid locking it
             .filter_by(
+                dag_id=dag_id,
                 run_id=run_id,
                 task_id=task_id,
                 map_index=map_index,
@@ -708,7 +706,7 @@ class TaskInstance(Base, LoggingMixin):
 
         source = session.execute(query).mappings().one_or_none()
         if source:
-            target_state: Any = inspect(self)
+            target_state = inspect(self)
             if target_state is None:
                 raise RuntimeError(f"Unable to inspect SQLAlchemy state of {type(self)}: {self}")
 
@@ -757,8 +755,7 @@ class TaskInstance(Base, LoggingMixin):
         self.executor = task.executor
         self.executor_config = task.executor_config
         self.operator = task.task_type
-        op_name = getattr(task, "operator_name", None)
-        self.custom_operator_name = op_name if isinstance(op_name, str) else ""
+        self.custom_operator_name = getattr(task, "operator_name", None)
         # Re-apply cluster policy here so that task default do not overload previous data
         task_instance_mutation_hook(self)
 
@@ -849,7 +846,6 @@ class TaskInstance(Base, LoggingMixin):
         """
         if TYPE_CHECKING:
             assert self.task
-            assert session is not None
 
         dag = self.task.dag
         if dag is None:
@@ -1021,7 +1017,7 @@ class TaskInstance(Base, LoggingMixin):
         :param session: SQLAlchemy ORM Session
         :return: DagRun
         """
-        info: Any = inspect(self)
+        info = inspect(self)
         if info.attrs.dag_run.loaded_value is not NO_VALUE:
             if getattr(self, "task", None) is not None:
                 if TYPE_CHECKING:
@@ -1170,8 +1166,7 @@ class TaskInstance(Base, LoggingMixin):
 
         # Closing all pooled connections to prevent
         # "max number of connections reached"
-        if settings.engine is not None:
-            settings.engine.dispose()
+        settings.engine.dispose()
         if verbose:
             if mark_success:
                 cls.logger().info("Marking success for %s on %s", ti.task, ti.logical_date)
@@ -1391,7 +1386,7 @@ class TaskInstance(Base, LoggingMixin):
                     session=session,
                 )
 
-        def _asset_event_extras_from_aliases() -> dict[tuple[AssetUniqueKey, str], set[str]]:
+        def _asset_event_extras_from_aliases() -> dict[tuple[AssetUniqueKey, frozenset], set[str]]:
             d = defaultdict(set)
             for event in outlet_events:
                 try:
@@ -1401,20 +1396,19 @@ class TaskInstance(Base, LoggingMixin):
                 if alias_name not in outlet_alias_names:
                     continue
                 asset_key = AssetUniqueKey(**event["dest_asset_key"])
-                extra_json = json.dumps(event["extra"], sort_keys=True)
-                d[asset_key, extra_json].add(alias_name)
+                extra_key = frozenset(event["extra"].items())
+                d[asset_key, extra_key].add(alias_name)
             return d
 
         outlet_alias_names = {o.name for o in task_outlets if o.type == AssetAlias.__name__ and o.name}
         if outlet_alias_names and (event_extras_from_aliases := _asset_event_extras_from_aliases()):
-            for (asset_key, extra_json), event_aliase_names in event_extras_from_aliases.items():
-                extra = json.loads(extra_json)
+            for (asset_key, extra_key), event_aliase_names in event_extras_from_aliases.items():
                 ti.log.debug("register event for asset %s with aliases %s", asset_key, event_aliase_names)
                 event = asset_manager.register_asset_change(
                     task_instance=ti,
                     asset=asset_key,
                     source_alias_names=event_aliase_names,
-                    extra=extra,
+                    extra=dict(extra_key),
                     session=session,
                 )
                 if event is None:
@@ -1425,7 +1419,7 @@ class TaskInstance(Base, LoggingMixin):
                         task_instance=ti,
                         asset=asset_key,
                         source_alias_names=event_aliase_names,
-                        extra=extra,
+                        extra=dict(extra_key),
                         session=session,
                     )
 
@@ -1639,7 +1633,7 @@ class TaskInstance(Base, LoggingMixin):
         """
         # Do not use provide_session here -- it expunges everything on exit!
         if not session:
-            session = settings.get_session()()
+            session = settings.Session()
 
         from airflow.exceptions import NotMapped
         from airflow.models.mappedoperator import get_mapped_ti_count
@@ -1666,7 +1660,7 @@ class TaskInstance(Base, LoggingMixin):
             # The dag_run may not be attached to the session anymore since the
             # code base is over-zealous with use of session.expunge_all().
             # Re-attach it if the relation is not loaded so we can load it when needed.
-            info: Any = inspect(dag_run)
+            info = inspect(dag_run)
             if info.attrs.consumed_asset_events.loaded_value is not NO_VALUE:
                 return dag_run
             # If dag_run is not flushed to db at all (e.g. CLI commands using
@@ -1878,7 +1872,7 @@ class TaskInstance(Base, LoggingMixin):
 
         # At this point either task_ids or map_indexes is explicitly multi-value.
         # Order return values to match task_ids and map_indexes ordering.
-        ordering: list[Any] = []
+        ordering = []
         if task_ids is None or isinstance(task_ids, str):
             ordering.append(XComModel.task_id)
         elif task_id_whens := {tid: i for i, tid in enumerate(task_ids)}:
@@ -1888,16 +1882,16 @@ class TaskInstance(Base, LoggingMixin):
         if map_indexes is None or isinstance(map_indexes, int):
             ordering.append(XComModel.map_index)
         elif isinstance(map_indexes, range):
+            order = XComModel.map_index
             if map_indexes.step < 0:
-                ordering.append(XComModel.map_index.desc())
-            else:
-                ordering.append(XComModel.map_index)
+                order = order.desc()
+            ordering.append(order)
         elif map_index_whens := {map_index: i for i, map_index in enumerate(map_indexes)}:
             ordering.append(case(map_index_whens, value=XComModel.map_index))
         else:
             ordering.append(XComModel.map_index)
         return LazyXComSelectSequence.from_select(
-            query.with_only_columns(XComModel.value).order_by(None),
+            query.with_entities(XComModel.value).order_by(None).statement,
             order_by=ordering,
             session=session,
         )
@@ -1919,10 +1913,10 @@ class TaskInstance(Base, LoggingMixin):
             num_running_task_instances_query = num_running_task_instances_query.where(
                 TaskInstance.run_id == self.run_id
             )
-        return session.scalar(num_running_task_instances_query) or 0
+        return session.scalar(num_running_task_instances_query)
 
     @staticmethod
-    def filter_for_tis(tis: Iterable[TaskInstance | TaskInstanceKey]) -> ColumnElement[bool] | None:
+    def filter_for_tis(tis: Iterable[TaskInstance | TaskInstanceKey]) -> BooleanClauseList | None:
         """Return SQLAlchemy filter to query selected task instances."""
         # DictKeys type, (what we often pass here from the scheduler) is not directly indexable :(
         # Or it might be a generator, but we need to be able to iterate over it more than once
@@ -2010,7 +2004,7 @@ class TaskInstance(Base, LoggingMixin):
         return or_(*filter_condition)
 
     @classmethod
-    def ti_selector_condition(cls, vals: Collection[str | tuple[str, int]]) -> ColumnElement[bool]:
+    def ti_selector_condition(cls, vals: Collection[str | tuple[str, int]]) -> ColumnOperators:
         """
         Build an SQLAlchemy filter for a list of task_ids or tuples of (task_id,map_index).
 
@@ -2021,7 +2015,7 @@ class TaskInstance(Base, LoggingMixin):
         task_id_only = [v for v in vals if isinstance(v, str)]
         with_map_index = [v for v in vals if not isinstance(v, str)]
 
-        filters: list[Any] = []
+        filters: list[ColumnOperators] = []
         if task_id_only:
             filters.append(cls.task_id.in_(task_id_only))
         if with_map_index:
@@ -2184,41 +2178,6 @@ class TaskInstance(Base, LoggingMixin):
                     / 1_000_000
                 ),
             }
-        )
-
-    @property
-    def is_schedulable(self):
-        """Determine if the task_instance should be scheduled or short-circuited to ``success``."""
-        return self.is_task_schedulable(self.task)
-
-    @staticmethod
-    def is_task_schedulable(task: Operator) -> bool:
-        """
-        Determine if the task should be scheduled instead of being short-circuited to ``success``.
-
-        A task requires scheduling if it is not a trivial EmptyOperator, i.e. one of the
-        following conditions holds:
-
-        * it does **not** inherit from ``EmptyOperator``
-        * it defines an ``on_execute_callback``
-        * it defines an ``on_success_callback``
-        * it declares any ``outlets``
-        * it declares any ``inlets``
-
-        If none of these are true, the task is considered empty and is immediately marked
-        successful without being scheduled.
-
-        Note: keeping this check as a separate public method is important so it can also be used
-        by listeners (when a task is not scheduled, listeners are never called). For example,
-        the OpenLineage listener checks all tasks at DAG start, and using this method lets
-        it consistently determine whether the listener will run for each task.
-        """
-        return bool(
-            not task.inherits_from_empty_operator
-            or task.has_on_execute_callback
-            or task.has_on_success_callback
-            or task.outlets
-            or task.inlets
         )
 
 

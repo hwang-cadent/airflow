@@ -33,7 +33,14 @@ export const NavTabs = ({ tabs }: Props) => {
   return (
     <Flex alignItems="center" borderBottomWidth={1} mb={2} ref={containerRef}>
       {tabs.map(({ icon, label, value }) => (
-        <NavLink end key={value} title={label} to={value}>
+        <NavLink
+          end
+          key={value}
+          title={label}
+          to={{
+            pathname: value,
+          }}
+        >
           {({ isActive }) => (
             <Center
               borderBottomColor="border.info"

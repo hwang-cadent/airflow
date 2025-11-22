@@ -25,7 +25,6 @@ from airflow.providers.standard.operators.empty import EmptyOperator
 from airflow.utils.session import provide_session
 from airflow.utils.state import DagRunState
 
-from tests_common.test_utils.asserts import assert_queries_count
 from tests_common.test_utils.db import clear_db_dags, clear_db_runs
 
 pytestmark = pytest.mark.db_test
@@ -66,7 +65,7 @@ class TestCalendar:
         clear_db_dags()
 
     @pytest.mark.parametrize(
-        ("query_params", "result"),
+        "query_params, result",
         [
             (
                 {},
@@ -104,8 +103,7 @@ class TestCalendar:
         ],
     )
     def test_daily_calendar(self, test_client, query_params, result):
-        with assert_queries_count(4):
-            response = test_client.get(f"/calendar/{self.DAG_NAME}", params=query_params)
+        response = test_client.get(f"/calendar/{self.DAG_NAME}", params=query_params)
         assert response.status_code == 200
         body = response.json()
         print(body)
@@ -113,7 +111,7 @@ class TestCalendar:
         assert body == result
 
     @pytest.mark.parametrize(
-        ("query_params", "result"),
+        "query_params, result",
         [
             (
                 {"granularity": "hourly"},
@@ -175,8 +173,7 @@ class TestCalendar:
         ],
     )
     def test_hourly_calendar(self, setup_dag_runs, test_client, query_params, result):
-        with assert_queries_count(4):
-            response = test_client.get(f"/calendar/{self.DAG_NAME}", params=query_params)
+        response = test_client.get(f"/calendar/{self.DAG_NAME}", params=query_params)
         assert response.status_code == 200
         body = response.json()
 

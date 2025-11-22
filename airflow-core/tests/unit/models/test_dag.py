@@ -21,8 +21,6 @@ import datetime
 import logging
 import os
 import pickle
-import re
-from contextlib import nullcontext
 from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -40,7 +38,7 @@ from airflow._shared.timezones import timezone
 from airflow._shared.timezones.timezone import datetime as datetime_tz
 from airflow.configuration import conf
 from airflow.dag_processing.dagbag import DagBag
-from airflow.exceptions import AirflowException
+from airflow.exceptions import AirflowException, ParamValidationError
 from airflow.models.asset import (
     AssetAliasModel,
     AssetDagRunQueue,
@@ -240,7 +238,7 @@ class TestDag:
         assert dag.timezone == settings.TIMEZONE
 
     @pytest.mark.parametrize(
-        ("cls", "expected"),
+        "cls, expected",
         [
             (StaticTestPriorityWeightStrategy, 99),
             (FactorPriorityWeightStrategy, 3),
@@ -299,7 +297,7 @@ class TestDag:
         assert jinja_env.undefined is jinja2.Undefined
 
     @pytest.mark.parametrize(
-        ("use_native_obj", "force_sandboxed", "expected_env"),
+        "use_native_obj, force_sandboxed, expected_env",
         [
             (False, True, SandboxedEnvironment),
             (False, False, SandboxedEnvironment),
@@ -556,7 +554,7 @@ class TestDag:
                 mock_active_runs_of_dags.assert_not_called()
 
     @pytest.mark.parametrize(
-        ("state", "catchup", "expected_next_dagrun"),
+        "state,catchup,expected_next_dagrun",
         [
             # With catchup=True, next_dagrun is the start date
             (DagRunState.RUNNING, True, DEFAULT_DATE),
@@ -955,7 +953,7 @@ class TestDag:
             dag_run.handle_dag_callback(dag=dag, success=False)
             dag_run.handle_dag_callback(dag=dag, success=True)
 
-    @pytest.mark.parametrize(("catchup", "expected_next_dagrun"), [(True, DEFAULT_DATE), (False, None)])
+    @pytest.mark.parametrize("catchup,expected_next_dagrun", [(True, DEFAULT_DATE), (False, None)])
     def test_next_dagrun_after_fake_scheduled_previous(
         self, catchup, expected_next_dagrun, testing_dag_bundle
     ):
@@ -1118,7 +1116,7 @@ class TestDag:
             session.query(DagModel).filter(DagModel.dag_id == dag_id).delete(synchronize_session=False)
 
     @pytest.mark.parametrize(
-        ("schedule_arg", "expected_timetable", "interval_description"),
+        "schedule_arg, expected_timetable, interval_description",
         [
             (None, NullTimetable(), "Never, external triggers only"),
             ("@daily", cron_timetable("0 0 * * *"), "At 00:00"),
@@ -1148,7 +1146,7 @@ class TestDag:
         assert dag.timetable.description == "Triggered by assets"
 
     @pytest.mark.parametrize(
-        ("timetable", "expected_description"),
+        "timetable, expected_description",
         [
             (NullTimetable(), "Never, external triggers only"),
             (cron_timetable("0 0 * * *"), "At 00:00"),
@@ -1187,24 +1185,6 @@ class TestDag:
             triggered_by=DagRunTriggeredByType.TEST,
         )
         assert dr.creating_job_id == job_id
-
-    @pytest.mark.parametrize("partition_key", [None, "my-key", 123])
-    def test_create_dagrun_partition_key(self, partition_key, dag_maker):
-        with dag_maker("test_create_dagrun_partition_key"):
-            ...
-        cm = nullcontext()
-        if isinstance(partition_key, int):
-            cm = pytest.raises(ValueError, match="Expected partition_key to be `str` | `None` but got `int`")
-        with cm:
-            dr = dag_maker.create_dagrun(
-                run_id="test_create_dagrun_partition_key",
-                run_after=DEFAULT_DATE,
-                run_type=DagRunType.MANUAL,
-                state=State.NONE,
-                triggered_by=DagRunTriggeredByType.TEST,
-                partition_key=partition_key,
-            )
-            assert dr.partition_key == partition_key
 
     def test_dag_add_task_sets_default_task_group(self):
         dag = DAG(dag_id="test_dag_add_task_sets_default_task_group", schedule=None, start_date=DEFAULT_DATE)
@@ -1424,7 +1404,7 @@ my_postgres_conn:
         dag.test(conn_file_path=os.fspath(path))
 
     @pytest.mark.parametrize(
-        ("ti_state_begin", "ti_state_end"),
+        "ti_state_begin, ti_state_end",
         [
             *((state, None) for state in State.task_states if state != TaskInstanceState.RUNNING),
             (TaskInstanceState.RUNNING, TaskInstanceState.RESTARTING),
@@ -1449,7 +1429,7 @@ my_postgres_conn:
         ) as dag:
             EmptyOperator(task_id=task_id)
 
-        session = settings.get_session()()
+        session = settings.Session()
         dagrun_1 = dag_maker.create_dagrun(
             run_id="backfill",
             run_type=DagRunType.BACKFILL_JOB,
@@ -1753,7 +1733,7 @@ my_postgres_conn:
 
     def test_validate_params_on_trigger_dag(self, testing_dag_bundle):
         dag = DAG("dummy-dag", schedule=None, params={"param1": Param(type="string")})
-        with pytest.raises(ValueError, match="No value passed"):
+        with pytest.raises(ParamValidationError, match="No value passed and Param has no default value"):
             sync_dag_to_db(dag).create_dagrun(
                 run_id="test_dagrun_missing_param",
                 run_type=DagRunType.MANUAL,
@@ -1765,7 +1745,9 @@ my_postgres_conn:
             )
 
         dag = DAG("dummy-dag", schedule=None, params={"param1": Param(type="string")})
-        with pytest.raises(ValueError, match="None is not of type 'string'"):
+        with pytest.raises(
+            ParamValidationError, match="Invalid input for param param1: None is not of type 'string'"
+        ):
             sync_dag_to_db(dag).create_dagrun(
                 run_id="test_dagrun_missing_param",
                 run_type=DagRunType.MANUAL,
@@ -1820,7 +1802,7 @@ my_postgres_conn:
 
     @pytest.mark.need_serialized_dag
     @pytest.mark.parametrize(
-        ("reference_type", "reference_column"),
+        "reference_type, reference_column",
         [
             pytest.param(DeadlineReference.DAGRUN_LOGICAL_DATE, "logical_date", id="logical_date"),
             pytest.param(DeadlineReference.DAGRUN_QUEUED_AT, "queued_at", id="queued_at"),
@@ -2635,7 +2617,7 @@ def test_dag_teardowns_property_lists_all_teardown_tasks():
 
 
 @pytest.mark.parametrize(
-    ("start_date", "expected_infos"),
+    "start_date, expected_infos",
     [
         (
             DEFAULT_DATE,
@@ -2721,7 +2703,7 @@ def test_iter_dagrun_infos_between_error(caplog):
 
 
 @pytest.mark.parametrize(
-    ("logical_date", "data_interval_start", "data_interval_end", "expected_data_interval"),
+    "logical_date, data_interval_start, data_interval_end, expected_data_interval",
     [
         pytest.param(None, None, None, None, id="no-next-run"),
         pytest.param(
@@ -2890,12 +2872,7 @@ def test_create_dagrun_disallow_manual_to_use_automated_run_id(run_id_type: DagR
     dag = DAG(dag_id="test", start_date=DEFAULT_DATE, schedule="@daily")
     run_id = DagRun.generate_run_id(run_type=run_id_type, run_after=DEFAULT_DATE, logical_date=DEFAULT_DATE)
 
-    with pytest.raises(
-        ValueError,
-        match=re.escape(
-            f"A manual DAG run cannot use ID {run_id!r} since it is reserved for {run_id_type.value} runs"
-        ),
-    ):
+    with pytest.raises(ValueError) as ctx:
         SerializedDAG.deserialize_dag(SerializedDAG.serialize_dag(dag)).create_dagrun(
             run_type=DagRunType.MANUAL,
             run_id=run_id,
@@ -2905,6 +2882,9 @@ def test_create_dagrun_disallow_manual_to_use_automated_run_id(run_id_type: DagR
             state=DagRunState.QUEUED,
             triggered_by=DagRunTriggeredByType.TEST,
         )
+    assert str(ctx.value) == (
+        f"A manual DAG run cannot use ID {run_id!r} since it is reserved for {run_id_type.value} runs"
+    )
 
 
 class TestTaskClearingSetupTeardownBehavior:
@@ -3238,7 +3218,7 @@ class TestTaskClearingSetupTeardownBehavior:
             assert self.cleared_neither(s1) == {s1, t1}
 
     @pytest.mark.parametrize(
-        ("upstream", "downstream", "expected"),
+        "upstream, downstream, expected",
         [
             (False, False, {"my_teardown", "my_setup"}),
             (False, True, {"my_setup", "my_work", "my_teardown"}),
@@ -3414,7 +3394,7 @@ class TestTaskClearingSetupTeardownBehavior:
 
 
 @pytest.mark.parametrize(
-    ("disable", "bundle_version", "expected"),
+    "disable, bundle_version, expected",
     [
         (True, "some-version", None),
         (False, "some-version", "some-version"),

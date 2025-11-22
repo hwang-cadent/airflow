@@ -20,13 +20,13 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
-from airflow.providers.common.compat.sdk import BaseSensorOperator
+from airflow.providers.apache.hdfs.version_compat import BaseSensorOperator
 
 if TYPE_CHECKING:
     from hdfs import InsecureClient
     from hdfs.ext.kerberos import KerberosClient
 
-    from airflow.providers.common.compat.sdk import Context
+    from airflow.utils.context import Context
 
 
 class WebHdfsSensor(BaseSensorOperator):

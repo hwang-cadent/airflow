@@ -41,7 +41,7 @@ if TYPE_CHECKING:
     from google.api_core.retry import Retry
     from google.protobuf.field_mask_pb2 import FieldMask
 
-    from airflow.providers.common.compat.sdk import Context
+    from airflow.utils.context import Context
 
 
 class ManagedKafkaBaseOperator(GoogleCloudBaseOperator):

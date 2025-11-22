@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import logging
+import logging.config
 import re
 from importlib import reload
 from unittest import mock
@@ -100,7 +101,7 @@ class TestFileTaskLogHandler:
             mock_k8s_get_task_log.assert_not_called()
 
     @pytest.mark.parametrize(
-        ("pod_override", "namespace_to_call"),
+        "pod_override, namespace_to_call",
         [
             pytest.param(k8s.V1Pod(metadata=k8s.V1ObjectMeta(namespace="namespace-A")), "namespace-A"),
             pytest.param(k8s.V1Pod(metadata=k8s.V1ObjectMeta(namespace="namespace-B")), "namespace-B"),

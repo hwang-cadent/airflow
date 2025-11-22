@@ -108,7 +108,7 @@ export const FlexibleForm = ({
     }
   };
 
-  return Object.keys(params).length > 0 ? (
+  return Object.entries(params).some(([, param]) => typeof param.schema.section !== "string") ? (
     Object.entries(params).map(([, secParam]) => {
       const currentSection = secParam.schema.section ?? flexibleFormDefaultSection;
 

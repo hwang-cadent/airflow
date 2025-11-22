@@ -41,7 +41,6 @@ def test_asset_events(session):
         "source_task_id": "bar",
         "source_run_id": "custom",
         "source_map_index": -1,
-        "partition_key": None,
     }
 
     events = [AssetEvent(id=i, timestamp=make_timestamp(i), **common) for i in (1, 2, 3)]
@@ -92,7 +91,7 @@ def test_asset_alias(session, test_asset_events, test_asset):
 
 class TestGetAssetEventByAsset:
     @pytest.mark.parametrize(
-        ("uri", "name"),
+        "uri, name",
         [
             (None, "test_get_asset_by_name"),
             ("s3://bucket/key", None),
@@ -123,7 +122,6 @@ class TestGetAssetEventByAsset:
                         "uri": "s3://bucket/key",
                     },
                     "timestamp": "2021-01-01T00:00:00Z",
-                    "partition_key": None,
                 },
                 {
                     "id": 2,
@@ -140,7 +138,6 @@ class TestGetAssetEventByAsset:
                     },
                     "created_dagruns": [],
                     "timestamp": "2021-01-02T00:00:00Z",
-                    "partition_key": None,
                 },
                 {
                     "id": 3,
@@ -157,13 +154,12 @@ class TestGetAssetEventByAsset:
                     },
                     "created_dagruns": [],
                     "timestamp": "2021-01-03T00:00:00Z",
-                    "partition_key": None,
                 },
             ]
         }
 
     @pytest.mark.parametrize(
-        ("uri", "name"),
+        "uri, name",
         [
             (None, "test_get_asset_by_name"),
             ("s3://bucket/key", None),
@@ -194,7 +190,6 @@ class TestGetAssetEventByAsset:
                     },
                     "created_dagruns": [],
                     "timestamp": "2021-01-02T00:00:00Z",
-                    "partition_key": None,
                 },
                 {
                     "id": 3,
@@ -211,13 +206,12 @@ class TestGetAssetEventByAsset:
                     },
                     "created_dagruns": [],
                     "timestamp": "2021-01-03T00:00:00Z",
-                    "partition_key": None,
                 },
             ]
         }
 
     @pytest.mark.parametrize(
-        ("uri", "name"),
+        "uri, name",
         [
             (None, "test_get_asset_by_name"),
             ("s3://bucket/key", None),
@@ -248,7 +242,6 @@ class TestGetAssetEventByAsset:
                     },
                     "created_dagruns": [],
                     "timestamp": "2021-01-01T00:00:00Z",
-                    "partition_key": None,
                 },
                 {
                     "id": 2,
@@ -265,13 +258,12 @@ class TestGetAssetEventByAsset:
                     },
                     "created_dagruns": [],
                     "timestamp": "2021-01-02T00:00:00Z",
-                    "partition_key": None,
                 },
             ]
         }
 
     @pytest.mark.parametrize(
-        ("uri", "name"),
+        "uri, name",
         [
             (None, "test_get_asset_by_name"),
             ("s3://bucket/key", None),
@@ -307,13 +299,12 @@ class TestGetAssetEventByAsset:
                     },
                     "created_dagruns": [],
                     "timestamp": "2021-01-02T00:00:00Z",
-                    "partition_key": None,
                 },
             ]
         }
 
     @pytest.mark.parametrize(
-        ("uri", "name"),
+        "uri, name",
         [
             (None, "test_get_asset_by_name"),
             ("s3://bucket/key", None),
@@ -344,7 +335,6 @@ class TestGetAssetEventByAsset:
                     },
                     "created_dagruns": [],
                     "timestamp": "2021-01-03T00:00:00Z",
-                    "partition_key": None,
                 },
                 {
                     "id": 2,
@@ -361,7 +351,6 @@ class TestGetAssetEventByAsset:
                     },
                     "created_dagruns": [],
                     "timestamp": "2021-01-02T00:00:00Z",
-                    "partition_key": None,
                 },
                 {
                     "id": 1,
@@ -378,13 +367,12 @@ class TestGetAssetEventByAsset:
                     },
                     "created_dagruns": [],
                     "timestamp": "2021-01-01T00:00:00Z",
-                    "partition_key": None,
                 },
             ]
         }
 
     @pytest.mark.parametrize(
-        ("uri", "name"),
+        "uri, name",
         [
             (None, "test_get_asset_by_name"),
             ("s3://bucket/key", None),
@@ -415,13 +403,12 @@ class TestGetAssetEventByAsset:
                     },
                     "created_dagruns": [],
                     "timestamp": "2021-01-01T00:00:00Z",
-                    "partition_key": None,
                 },
             ]
         }
 
     @pytest.mark.parametrize(
-        ("uri", "name"),
+        "uri, name",
         [
             (None, "test_get_asset_by_name"),
             ("s3://bucket/key", None),
@@ -452,7 +439,6 @@ class TestGetAssetEventByAsset:
                     },
                     "created_dagruns": [],
                     "timestamp": "2021-01-03T00:00:00Z",
-                    "partition_key": None,
                 },
             ]
         }
@@ -483,7 +469,6 @@ class TestGetAssetEventByAssetAlias:
                     },
                     "created_dagruns": [],
                     "timestamp": "2021-01-01T00:00:00Z",
-                    "partition_key": None,
                 },
                 {
                     "id": 2,
@@ -500,7 +485,6 @@ class TestGetAssetEventByAssetAlias:
                     },
                     "created_dagruns": [],
                     "timestamp": "2021-01-02T00:00:00Z",
-                    "partition_key": None,
                 },
                 {
                     "id": 3,
@@ -517,7 +501,6 @@ class TestGetAssetEventByAssetAlias:
                     },
                     "created_dagruns": [],
                     "timestamp": "2021-01-03T00:00:00Z",
-                    "partition_key": None,
                 },
             ]
         }

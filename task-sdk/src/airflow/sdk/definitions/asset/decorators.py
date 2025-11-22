@@ -29,8 +29,6 @@ from airflow.sdk.exceptions import AirflowRuntimeError
 if TYPE_CHECKING:
     from collections.abc import Callable, Collection, Iterator, Mapping
 
-    from pydantic.types import JsonValue
-
     from airflow.sdk import DAG, AssetAlias, ObjectStoragePath
     from airflow.sdk.bases.decorator import _TaskDecorator
     from airflow.sdk.definitions.asset import AssetUniqueKey
@@ -220,7 +218,7 @@ class asset(_DAGFactory):
     name: str | None = None
     uri: str | ObjectStoragePath | None = None
     group: str = Asset.asset_type
-    extra: dict[str, JsonValue] = attrs.field(factory=dict)
+    extra: dict[str, Any] = attrs.field(factory=dict)
     watchers: list[BaseTrigger] = attrs.field(factory=list)
 
     @attrs.define(kw_only=True)

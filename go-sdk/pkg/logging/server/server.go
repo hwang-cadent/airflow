@@ -250,7 +250,7 @@ func (l *LogServer) validateToken(next http.Handler) http.Handler {
 		if !ok || fnameClaim != r.URL.Path {
 			l.logger.Error(
 				"Claim is for a different path than the URL",
-				"fnClaim",
+				"fnClain",
 				fnameClaim,
 				"r.URL.Path",
 				r.URL.Path,

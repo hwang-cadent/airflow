@@ -41,10 +41,13 @@ from typing import TYPE_CHECKING, Any, cast
 import aiosmtplib
 
 from airflow.exceptions import AirflowException, AirflowNotFoundException
-from airflow.providers.common.compat.sdk import BaseHook
+from airflow.providers.smtp.version_compat import BaseHook
 
 if TYPE_CHECKING:
-    from airflow.providers.common.compat.sdk import Connection
+    try:
+        from airflow.sdk import Connection
+    except (ImportError, ModuleNotFoundError):
+        from airflow.models.connection import Connection  # type: ignore[assignment]
 
 
 def build_xoauth2_string(username: str, token: str) -> str:

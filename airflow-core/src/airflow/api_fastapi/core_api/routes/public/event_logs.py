@@ -128,7 +128,7 @@ def get_event_logs(
     event_pattern: Annotated[_SearchParam, Depends(search_param_factory(Log.event, "event_pattern"))],
 ) -> EventLogCollectionResponse:
     """Get all Event Logs."""
-    query = select(Log).options(joinedload(Log.task_instance), joinedload(Log.dag_model))
+    query = select(Log)
     event_logs_select, total_entries = paginated_select(
         statement=query,
         order_by=order_by,

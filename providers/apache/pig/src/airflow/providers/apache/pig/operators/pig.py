@@ -22,10 +22,10 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 from airflow.providers.apache.pig.hooks.pig import PigCliHook
-from airflow.providers.common.compat.sdk import BaseOperator
+from airflow.providers.apache.pig.version_compat import BaseOperator
 
 if TYPE_CHECKING:
-    from airflow.providers.common.compat.sdk import Context
+    from airflow.utils.context import Context
 
 
 class PigOperator(BaseOperator):

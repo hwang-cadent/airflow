@@ -179,8 +179,7 @@ def _create_read_only_permission(client: KeycloakAdmin, client_uuid: str):
 
 def _create_admin_permission(client: KeycloakAdmin, client_uuid: str):
     all_scopes = client.get_client_authz_scopes(client_uuid)
-    scope_names = get_args(ExtendedResourceMethod) + ("LIST",)
-    scopes = [scope["id"] for scope in all_scopes if scope["name"] in scope_names]
+    scopes = [scope["id"] for scope in all_scopes if scope["name"] in get_args(ExtendedResourceMethod)]
     payload = {
         "name": "Admin",
         "type": "scope",

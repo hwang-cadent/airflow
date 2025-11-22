@@ -72,7 +72,7 @@ if TYPE_CHECKING:
     from google.protobuf.field_mask_pb2 import FieldMask
     from google.type.interval_pb2 import Interval
 
-    from airflow.providers.common.compat.sdk import Context
+    from airflow.utils.context import Context
 
 
 class PreemptibilityType(Enum):
@@ -628,7 +628,6 @@ class DataprocCreateClusterOperator(GoogleCloudBaseOperator):
         "virtual_cluster_config",
         "cluster_name",
         "labels",
-        "gcp_conn_id",
         "impersonation_chain",
     )
     template_fields_renderers = {"cluster_config": "json", "virtual_cluster_config": "json"}
@@ -952,13 +951,7 @@ class DataprocDeleteClusterOperator(GoogleCloudBaseOperator):
     :param polling_interval_seconds: Time (seconds) to wait between calls to check the cluster status.
     """
 
-    template_fields: Sequence[str] = (
-        "project_id",
-        "region",
-        "cluster_name",
-        "gcp_conn_id",
-        "impersonation_chain",
-    )
+    template_fields: Sequence[str] = ("project_id", "region", "cluster_name", "impersonation_chain")
 
     def __init__(
         self,
@@ -1084,7 +1077,6 @@ class _DataprocStartStopClusterBaseOperator(GoogleCloudBaseOperator):
         "region",
         "project_id",
         "request_id",
-        "gcp_conn_id",
         "impersonation_chain",
     )
 
@@ -1430,7 +1422,7 @@ class DataprocCreateWorkflowTemplateOperator(GoogleCloudBaseOperator):
     :param metadata: Additional metadata that is provided to the method.
     """
 
-    template_fields: Sequence[str] = ("region", "template", "gcp_conn_id")
+    template_fields: Sequence[str] = ("region", "template")
     template_fields_renderers = {"template": "json"}
     operator_extra_links = (DataprocWorkflowTemplateLink(),)
 
@@ -1524,13 +1516,7 @@ class DataprocInstantiateWorkflowTemplateOperator(GoogleCloudBaseOperator):
     :param cancel_on_kill: Flag which indicates whether cancel the workflow, when on_kill is called
     """
 
-    template_fields: Sequence[str] = (
-        "template_id",
-        "gcp_conn_id",
-        "impersonation_chain",
-        "request_id",
-        "parameters",
-    )
+    template_fields: Sequence[str] = ("template_id", "impersonation_chain", "request_id", "parameters")
     template_fields_renderers = {"parameters": "json"}
     operator_extra_links = (DataprocWorkflowLink(),)
 
@@ -1678,7 +1664,7 @@ class DataprocInstantiateInlineWorkflowTemplateOperator(GoogleCloudBaseOperator)
     :param cancel_on_kill: Flag which indicates whether cancel the workflow, when on_kill is called
     """
 
-    template_fields: Sequence[str] = ("template", "gcp_conn_id", "impersonation_chain")
+    template_fields: Sequence[str] = ("template", "impersonation_chain")
     template_fields_renderers = {"template": "json"}
     operator_extra_links = (DataprocWorkflowLink(),)
 
@@ -1846,14 +1832,7 @@ class DataprocSubmitJobOperator(GoogleCloudBaseOperator):
     :param wait_timeout: How many seconds wait for job to be ready. Used only if ``asynchronous`` is False
     """
 
-    template_fields: Sequence[str] = (
-        "project_id",
-        "region",
-        "job",
-        "gcp_conn_id",
-        "impersonation_chain",
-        "request_id",
-    )
+    template_fields: Sequence[str] = ("project_id", "region", "job", "impersonation_chain", "request_id")
     template_fields_renderers = {"job": "json"}
 
     operator_extra_links = (DataprocJobLink(),)
@@ -2052,7 +2031,6 @@ class DataprocUpdateClusterOperator(GoogleCloudBaseOperator):
         "region",
         "request_id",
         "project_id",
-        "gcp_conn_id",
         "impersonation_chain",
     )
     operator_extra_links = (DataprocClusterLink(),)
@@ -2188,7 +2166,6 @@ class DataprocDiagnoseClusterOperator(GoogleCloudBaseOperator):
         "project_id",
         "region",
         "cluster_name",
-        "gcp_conn_id",
         "impersonation_chain",
         "tarball_gcs_dir",
         "diagnosis_interval",
@@ -2335,7 +2312,6 @@ class DataprocCreateBatchOperator(GoogleCloudBaseOperator):
         "batch",
         "batch_id",
         "region",
-        "gcp_conn_id",
         "impersonation_chain",
     )
     operator_extra_links = (DataprocBatchLink(),)
@@ -2644,13 +2620,7 @@ class DataprocDeleteBatchOperator(GoogleCloudBaseOperator):
         account from the list granting this role to the originating account (templated).
     """
 
-    template_fields: Sequence[str] = (
-        "batch_id",
-        "region",
-        "project_id",
-        "gcp_conn_id",
-        "impersonation_chain",
-    )
+    template_fields: Sequence[str] = ("batch_id", "region", "project_id", "impersonation_chain")
 
     def __init__(
         self,
@@ -2714,13 +2684,7 @@ class DataprocGetBatchOperator(GoogleCloudBaseOperator):
         account from the list granting this role to the originating account (templated).
     """
 
-    template_fields: Sequence[str] = (
-        "batch_id",
-        "region",
-        "project_id",
-        "gcp_conn_id",
-        "impersonation_chain",
-    )
+    template_fields: Sequence[str] = ("batch_id", "region", "project_id", "impersonation_chain")
     operator_extra_links = (DataprocBatchLink(),)
 
     def __init__(
@@ -2796,7 +2760,7 @@ class DataprocListBatchesOperator(GoogleCloudBaseOperator):
     :param order_by: How to order results as specified in ListBatchesRequest
     """
 
-    template_fields: Sequence[str] = ("region", "project_id", "gcp_conn_id", "impersonation_chain")
+    template_fields: Sequence[str] = ("region", "project_id", "impersonation_chain")
     operator_extra_links = (DataprocBatchesListLink(),)
 
     def __init__(
@@ -2870,13 +2834,7 @@ class DataprocCancelOperationOperator(GoogleCloudBaseOperator):
         account from the list granting this role to the originating account (templated).
     """
 
-    template_fields: Sequence[str] = (
-        "operation_name",
-        "region",
-        "project_id",
-        "gcp_conn_id",
-        "impersonation_chain",
-    )
+    template_fields: Sequence[str] = ("operation_name", "region", "project_id", "impersonation_chain")
 
     def __init__(
         self,

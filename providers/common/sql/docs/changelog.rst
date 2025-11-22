@@ -25,45 +25,6 @@
 Changelog
 ---------
 
-1.29.0
-......
-
-Features
-~~~~~~~~
-
-* ``Allow a list of SQL statements in GenericTransfer (#56041)``
-
-Misc
-~~~~
-
-* ``Convert all airflow distributions to be compliant with ASF requirements (#58138)``
-* ``Migrate 'common/sql' provider to 'common.compat' (#57135)``
-* ``Migrate 'common.sql' provider to 'common.compat' (#57075)``
-
-.. Below changes are excluded from the changelog. Move them to
-   appropriate section above if needed. Do not delete the lines(!):
-   * ``Delete all unnecessary LICENSE Files (#58191)``
-   * ``Enable PT006 rule to 19 files in providers (cncf,common) (#57995)``
-   * ``Fix code formatting via ruff preview (#57641)``
-   * ``Enable ruff PLW0127 rule (#57298)``
-
-1.28.2
-......
-
-Misc
-~~~~
-
-* ``fix mypy type errors in common/sql provider for sqlalchemy 2 upgrade (#56824)``
-
-Doc-only
-~~~~~~~~
-
-* ``Remove placeholder Release Date in changelog and index files (#56056)``
-
-.. Below changes are excluded from the changelog. Move them to
-   appropriate section above if needed. Do not delete the lines(!):
-   * ``Enable PT011 rule to prvoider tests (#56495)``
-
 1.28.1
 ......
 
@@ -109,6 +70,8 @@ Doc-only
    * ``Replace API server's direct Connection access workaround in BaseHook (#54083)``
    * ``Switch pre-commit to prek (#54258)``
    * ``make bundle_name not nullable (#47592)``
+
+.. Review and move the new changes to one of the sections above:
    * ``Fix Airflow 2 reference in README/index of providers (#55240)``
 
 1.27.5
@@ -380,6 +343,9 @@ Misc
 .. Below changes are excluded from the changelog. Move them to
    appropriate section above if needed. Do not delete the lines(!):
    * ``Use Python 3.9 as target version for Ruff & Black rules (#44298)``
+
+
+.. Review and move the new changes to one of the sections above:
    * ``Update path of example dags in docs (#45069)``
 
 1.20.0
@@ -616,8 +582,7 @@ Misc
 * ``feat: Switch all class, functions, methods deprecations to decorators (#36876)``
 * ``Add more-itertools as dependency of common-sql (#37359)``
 
-.. Below changes are excluded from the changelog. Move them to
-   appropriate section above if needed. Do not delete the lines(!):
+.. Review and move the new changes to one of the sections above:
    * ``Prepare docs 1st wave of Providers February 2024 (#37326)``
 
 1.10.1
@@ -674,8 +639,7 @@ Misc
 * ``Add '_make_serializable' method which other SQL operators can overrides when result from cursor is not JSON-serializable (#32319)``
 * ``Remove backcompat inheritance for DbApiHook (#35754)``
 
-.. Below changes are excluded from the changelog. Move them to
-   appropriate section above if needed. Do not delete the lines(!):
+.. Review and move the new changes to one of the sections above:
    * ``Use reproducible builds for providers (#35693)``
    * ``Fix and reapply templates for provider documentation (#35686)``
    * ``Prepare docs 1st wave of Providers November 2023 (#35537)``

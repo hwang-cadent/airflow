@@ -38,12 +38,11 @@ export default defineConfig(({ command }) => {
             name: "AirflowPlugin",
           },
           rollupOptions: {
-            external: ["react", "react-dom", "react-router-dom", "react/jsx-runtime"],
+            external: ["react", "react-dom"],
             output: {
               globals: {
                 react: "React",
                 "react-dom": "ReactDOM",
-                "react-router-dom": "ReactRouterDOM",
                 "react/jsx-runtime": "ReactJSXRuntime",
               },
             },

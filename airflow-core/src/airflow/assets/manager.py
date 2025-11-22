@@ -38,7 +38,6 @@ from airflow.models.asset import (
 )
 from airflow.stats import Stats
 from airflow.utils.log.logging_mixin import LoggingMixin
-from airflow.utils.sqlalchemy import get_dialect_name
 
 if TYPE_CHECKING:
     from sqlalchemy.orm.session import Session
@@ -246,7 +245,7 @@ class AssetManager(LoggingMixin):
         if not dags_to_queue:
             return
 
-        if get_dialect_name(session) == "postgresql":
+        if session.bind.dialect.name == "postgresql":
             return cls._postgres_queue_dagruns(asset_id, dags_to_queue, session)
         return cls._slow_path_queue_dagruns(asset_id, dags_to_queue, session)
 

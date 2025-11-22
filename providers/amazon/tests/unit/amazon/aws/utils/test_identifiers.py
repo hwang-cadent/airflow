@@ -23,7 +23,7 @@ import uuid
 import pytest
 
 from airflow.providers.amazon.aws.utils.identifiers import generate_uuid
-from airflow.providers.amazon.version_compat import NOTSET
+from airflow.utils.types import NOTSET
 
 
 class TestGenerateUuid:

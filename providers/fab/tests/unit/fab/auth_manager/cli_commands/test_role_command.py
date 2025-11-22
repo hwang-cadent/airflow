@@ -115,9 +115,9 @@ class TestCliRoles:
         self.appbuilder.sm.add_role("FakeTeamA")
         self.appbuilder.sm.add_role("FakeTeamB")
 
-        with redirect_stdout(StringIO()) as stdout_io:
+        with redirect_stdout(StringIO()) as stdout:
             role_command.roles_list(self.parser.parse_args(["roles", "list"]))
-            stdout = stdout_io.getvalue()
+            stdout = stdout.getvalue()
 
         assert "FakeTeamA" in stdout
         assert "FakeTeamB" in stdout

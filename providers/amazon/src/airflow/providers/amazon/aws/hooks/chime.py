@@ -33,7 +33,7 @@ class ChimeWebhookHook(HttpHook):
     """
     Interact with Amazon Chime Webhooks to create notifications.
 
-    .. warning:: This hook is only designed to work with web hooks and not chatbots.
+    .. warning:: This hook is only designed to work with web hooks and not chat bots.
 
     :param chime_conn_id: :ref:`Amazon Chime Connection ID <howto/connection:chime>`
         with Endpoint as `https://hooks.chime.aws` and the webhook token

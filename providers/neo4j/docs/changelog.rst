@@ -29,37 +29,6 @@
 Changelog
 ---------
 
-3.10.3
-......
-
-Misc
-~~~~
-
-* ``Convert all airflow distributions to be compliant with ASF requirements (#58138)``
-* ``Migrate neo4j provider to 'common.compat' (#57149)``
-
-.. Below changes are excluded from the changelog. Move them to
-   appropriate section above if needed. Do not delete the lines(!):
-   * ``Delete all unnecessary LICENSE Files (#58191)``
-   * ``Enable PT006 rule to neo4j  Provider test (#57939)``
-
-3.10.2
-......
-
-Misc
-~~~~
-
-* ``Fix mypy type errors in Neo4j provider for SQLAlchemy 2 upgrade (#56785)``
-
-Doc-only
-~~~~~~~~
-
-* ``Remove placeholder Release Date in changelog and index files (#56056)``
-
-.. Below changes are excluded from the changelog. Move them to
-   appropriate section above if needed. Do not delete the lines(!):
-   * ``Common.Compat: Extract reusable compat utilities and rename to sdk (#56884)``
-
 3.10.1
 ......
 
@@ -78,8 +47,7 @@ Doc-only
    appropriate section above if needed. Do not delete the lines(!):
    * ``Switch pre-commit to prek (#54258)``
 
-.. Below changes are excluded from the changelog. Move them to
-   appropriate section above if needed. Do not delete the lines(!):
+.. Review and move the new changes to one of the sections above:
    * ``Fix Airflow 2 reference in README/index of providers (#55240)``
 
 3.10.0
@@ -203,8 +171,7 @@ Misc
    * ``Prepare docs for Nov 1st wave of providers (#44011)``
    * ``Split providers out of the main "airflow/" tree into a UV workspace project (#42505)``
 
-.. Below changes are excluded from the changelog. Move them to
-   appropriate section above if needed. Do not delete the lines(!):
+.. Review and move the new changes to one of the sections above:
    * ``Update path of example dags in docs (#45069)``
 
 3.7.0

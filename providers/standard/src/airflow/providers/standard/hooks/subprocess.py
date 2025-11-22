@@ -77,6 +77,14 @@ class SubprocessHook(BaseHook):
         """
         self.log.info("Tmp dir root location: %s", gettempdir())
         with working_directory(cwd=cwd) as cwd:
+
+            def pre_exec():
+                # Restore default signal disposition and invoke setsid
+                for sig in ("SIGPIPE", "SIGXFZ", "SIGXFSZ"):
+                    if hasattr(signal, sig):
+                        signal.signal(getattr(signal, sig), signal.SIG_DFL)
+                os.setsid()
+
             self.log.info("Running command: %s", command)
 
             self.sub_process = Popen(
@@ -85,8 +93,7 @@ class SubprocessHook(BaseHook):
                 stderr=STDOUT,
                 cwd=cwd,
                 env=env if env or env == {} else os.environ,
-                start_new_session=True,
-                restore_signals=True,
+                preexec_fn=pre_exec,
             )
 
             self.log.info("Output:")

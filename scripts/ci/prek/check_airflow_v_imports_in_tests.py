@@ -31,8 +31,6 @@ import ast
 import sys
 from pathlib import Path
 
-from common_prek_utils import AIRFLOW_ROOT_PATH
-
 sys.path.insert(0, str(Path(__file__).parent.resolve()))  # make sure common_prek_utils is imported
 from common_prek_utils import console
 
@@ -70,7 +68,7 @@ def main():
     if len(sys.argv) > 1:
         test_files = [Path(f) for f in sys.argv[1:]]
     else:
-        base = AIRFLOW_ROOT_PATH / "providers"
+        base = Path(__file__).parents[3] / "providers"
         test_files = list(base.glob("**/tests/**/*.py"))
         console.print(test_files)
     all_errors = []

@@ -21,7 +21,7 @@ from typing import Any
 
 import jenkins
 
-from airflow.providers.common.compat.sdk import BaseHook
+from airflow.providers.jenkins.version_compat import BaseHook
 
 
 class JenkinsHook(BaseHook):

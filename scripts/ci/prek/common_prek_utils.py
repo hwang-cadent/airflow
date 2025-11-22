@@ -221,12 +221,9 @@ def run_command_via_breeze_shell(
         subprocess_cmd.extend(["--project-name", project_name])
     subprocess_cmd.append(" ".join([shlex.quote(arg) for arg in cmd]))
     if os.environ.get("VERBOSE_COMMANDS"):
-        if console:
-            console.print(
-                f"[magenta]Running command: {' '.join([shlex.quote(item) for item in subprocess_cmd])}[/]"
-            )
-        else:
-            print(f"Running command: {' '.join([shlex.quote(item) for item in subprocess_cmd])}")
+        console.print(
+            f"[magenta]Running command: {' '.join([shlex.quote(item) for item in subprocess_cmd])}[/]"
+        )
     result = subprocess.run(
         subprocess_cmd,
         check=False,
@@ -320,7 +317,8 @@ def get_provider_id_from_path(file_path: Path) -> str | None:
             for providers_root_candidate in parent.parents:
                 if providers_root_candidate.name == "providers":
                     return parent.relative_to(providers_root_candidate).as_posix().replace("/", ".")
-            return None
+            else:
+                return None
     return None
 
 

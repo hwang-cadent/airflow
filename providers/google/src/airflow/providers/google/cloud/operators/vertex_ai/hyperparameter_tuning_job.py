@@ -43,7 +43,7 @@ if TYPE_CHECKING:
     from google.api_core.retry import Retry
     from google.cloud.aiplatform import HyperparameterTuningJob, gapic, hyperparameter_tuning
 
-    from airflow.providers.common.compat.sdk import Context
+    from airflow.utils.context import Context
 
 
 class CreateHyperparameterTuningJobOperator(GoogleCloudBaseOperator):

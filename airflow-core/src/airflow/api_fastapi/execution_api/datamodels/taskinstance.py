@@ -17,7 +17,6 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Iterable
 from datetime import timedelta
 from enum import Enum
 from typing import Annotated, Any, Literal
@@ -26,7 +25,6 @@ from pydantic import (
     AwareDatetime,
     Discriminator,
     Field,
-    JsonValue,
     Tag,
     TypeAdapter,
     WithJsonSchema,
@@ -260,7 +258,7 @@ class AssetReferenceAssetEventDagRun(StrictBaseModel):
 
     name: str
     uri: str
-    extra: dict[str, JsonValue]
+    extra: dict
 
 
 class AssetAliasReferenceAssetEventDagRun(StrictBaseModel):
@@ -273,7 +271,7 @@ class AssetEventDagRunReference(StrictBaseModel):
     """Schema for AssetEvent model used in DagRun."""
 
     asset: AssetReferenceAssetEventDagRun
-    extra: dict[str, JsonValue]
+    extra: dict
     source_task_id: str | None
     source_dag_id: str | None
     source_run_id: str | None
@@ -303,7 +301,6 @@ class DagRun(StrictBaseModel):
     conf: dict[str, Any] | None = None
     triggering_user_name: str | None = None
     consumed_asset_events: list[AssetEventDagRunReference]
-    partition_key: str | None
 
 
 class TIRunContext(BaseModel):
@@ -355,12 +352,6 @@ class TaskStatesResponse(BaseModel):
     """Response for task states with run_id, task and state."""
 
     task_states: dict[str, Any]
-
-
-class TaskBreadcrumbsResponse(BaseModel):
-    """Response for task breadcrumbs."""
-
-    breadcrumbs: Iterable[dict[str, Any]]
 
 
 class InactiveAssetsResponse(BaseModel):

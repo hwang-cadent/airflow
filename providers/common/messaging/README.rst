@@ -23,7 +23,7 @@
 
 Package ``apache-airflow-providers-common-messaging``
 
-Release: ``2.0.1``
+Release: ``2.0.0``
 
 
 ``Common Messaging Provider``
@@ -36,7 +36,7 @@ This is a provider package for ``common.messaging`` provider. All classes for th
 are in ``airflow.providers.common.messaging`` python package.
 
 You can find package information and changelog for the provider
-in the `documentation <https://airflow.apache.org/docs/apache-airflow-providers-common-messaging/2.0.1/>`_.
+in the `documentation <https://airflow.apache.org/docs/apache-airflow-providers-common-messaging/2.0.0/>`_.
 
 Installation
 ------------
@@ -56,15 +56,5 @@ PIP package         Version required
 ``apache-airflow``  ``>=3.0.1``
 ==================  ==================
 
-Optional dependencies
-----------------------
-
-================  ================================================
-Extra             Dependencies
-================  ================================================
-``amazon``        ``apache-airflow-providers-amazon>=9.7.0``
-``apache.kafka``  ``apache-airflow-providers-apache-kafka>=1.9.0``
-================  ================================================
-
 The changelog for the provider package can be found in the
-`changelog <https://airflow.apache.org/docs/apache-airflow-providers-common-messaging/2.0.1/changelog.html>`_.
+`changelog <https://airflow.apache.org/docs/apache-airflow-providers-common-messaging/2.0.0/changelog.html>`_.

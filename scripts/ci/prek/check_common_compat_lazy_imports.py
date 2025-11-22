@@ -50,7 +50,7 @@ def extract_runtime_maps(py_file: Path) -> tuple[set[str], set[str], set[str]]:
 
     for node in tree.body:
         # Handle both annotated assignments and regular assignments
-        targets: list[ast.Name | ast.expr] = []
+        targets = []
         value = None
 
         if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):

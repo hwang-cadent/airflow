@@ -30,7 +30,7 @@ from airflow.providers.google.version_compat import BaseOperator
 WILDCARD = "*"
 
 if TYPE_CHECKING:
-    from airflow.providers.common.compat.sdk import Context
+    from airflow.utils.context import Context
 
 
 class GCSToGCSOperator(BaseOperator):

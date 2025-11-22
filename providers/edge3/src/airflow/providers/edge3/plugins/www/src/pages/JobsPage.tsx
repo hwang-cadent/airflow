@@ -16,9 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { Box, Table, Text } from "@chakra-ui/react";
+import { Box, Link, Table, Text } from "@chakra-ui/react";
 import { useUiServiceJobs } from "openapi/queries";
-import { Link } from "react-router-dom";
+import { Link as RouterLink } from "react-router-dom";
 import TimeAgo from "react-timeago";
 
 import { ErrorAlert } from "src/components/ErrorAlert";
@@ -60,21 +60,22 @@ export const JobsPage = () => {
                 key={`${job.dag_id}.${job.run_id}.${job.task_id}.${job.map_index}.${job.try_number}`}
               >
                 <Table.Cell>
-                  <Link to={`/dags/${job.dag_id}`}>{job.dag_id}</Link>
+                  {/* TODO Check why <Link to={`/dags/${job.dag_id}`}> is not working via react-router-dom! */}
+                  <Link href={`../dags/${job.dag_id}`}>{job.dag_id}</Link>
                 </Table.Cell>
                 <Table.Cell>
-                  <Link to={`/dags/${job.dag_id}/runs/${job.run_id}`}>{job.run_id}</Link>
+                  <Link href={`../dags/${job.dag_id}/runs/${job.run_id}`}>{job.run_id}</Link>
                 </Table.Cell>
                 <Table.Cell>
                   {job.map_index >= 0 ? (
                     <Link
-                      to={`/dags/${job.dag_id}/runs/${job.run_id}/tasks/${job.task_id}/mapped/${job.map_index}?try_number=${job.try_number}`}
+                      href={`../dags/${job.dag_id}/runs/${job.run_id}/tasks/${job.task_id}/mapped/${job.map_index}?try_number=${job.try_number}`}
                     >
                       {job.task_id}
                     </Link>
                   ) : (
                     <Link
-                      to={`/dags/${job.dag_id}/runs/${job.run_id}/tasks/${job.task_id}?try_number=${job.try_number}`}
+                      href={`../dags/${job.dag_id}/runs/${job.run_id}/tasks/${job.task_id}?try_number=${job.try_number}`}
                     >
                       {job.task_id}
                     </Link>
@@ -90,7 +91,7 @@ export const JobsPage = () => {
                   {job.queued_dttm ? <TimeAgo date={job.queued_dttm} live={false} /> : undefined}
                 </Table.Cell>
                 <Table.Cell>
-                  <Link to={`../worker#${job.edge_worker}`}>{job.edge_worker}</Link>
+                  <RouterLink to={`/plugin/edge_worker#${job.edge_worker}`}>{job.edge_worker}</RouterLink>
                 </Table.Cell>
                 <Table.Cell>
                   {job.last_update ? <TimeAgo date={job.last_update} live={false} /> : undefined}

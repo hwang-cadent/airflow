@@ -85,7 +85,7 @@ source_root_modules: list[str] = [
     "docker-tests",
     "kubernetes-tests",
     "helm-tests",
-    "task-sdk-integration-tests",
+    "task-sdk-tests",
 ]
 
 all_module_paths: list[str] = []

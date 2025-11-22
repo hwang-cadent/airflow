@@ -28,7 +28,6 @@ if not conf.is_disabled():
         lineage_job_namespace,
         lineage_parent_id,
         lineage_root_job_name,
-        lineage_root_job_namespace,
         lineage_root_parent_id,
         lineage_root_run_id,
         lineage_run_id,
@@ -52,7 +51,6 @@ class OpenLineageProviderPlugin(AirflowPlugin):
             lineage_parent_id,
             lineage_root_run_id,
             lineage_root_job_name,
-            lineage_root_job_namespace,
             lineage_root_parent_id,
         ]
         listeners = [get_openlineage_listener()]

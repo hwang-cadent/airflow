@@ -40,7 +40,7 @@ from airflow.providers.google.cloud.triggers.dataflow import (
 from airflow.providers.google.common.hooks.base_google import PROVIDE_PROJECT_ID
 
 if TYPE_CHECKING:
-    from airflow.providers.common.compat.sdk import Context
+    from airflow.utils.context import Context
 
 
 class DataflowJobStatusSensor(BaseSensorOperator):

@@ -30,9 +30,8 @@ from cryptography.fernet import Fernet
 from airflow._shared.timezones import timezone
 from airflow.jobs.job import Job
 from airflow.jobs.triggerer_job_runner import TriggererJobRunner
-from airflow.models import TaskInstance, Trigger
+from airflow.models import Deadline, TaskInstance, Trigger
 from airflow.models.asset import AssetEvent, AssetModel, AssetWatcherModel
-from airflow.models.callback import Callback, TriggererCallback
 from airflow.models.xcom import XComModel
 from airflow.providers.standard.operators.empty import EmptyOperator
 from airflow.sdk.definitions.deadline import AsyncCallback
@@ -48,6 +47,7 @@ from airflow.utils.session import create_session
 from airflow.utils.state import State
 
 from tests_common.test_utils.config import conf_vars
+from unit.models import DEFAULT_DATE
 
 pytestmark = pytest.mark.db_test
 
@@ -63,7 +63,7 @@ def session():
 def clear_db(session):
     session.query(TaskInstance).delete()
     session.query(AssetWatcherModel).delete()
-    session.query(Callback).delete()
+    session.query(Deadline).delete()
     session.query(Trigger).delete()
     session.query(AssetModel).delete()
     session.query(AssetEvent).delete()
@@ -71,7 +71,7 @@ def clear_db(session):
     yield session
     session.query(TaskInstance).delete()
     session.query(AssetWatcherModel).delete()
-    session.query(Callback).delete()
+    session.query(Deadline).delete()
     session.query(Trigger).delete()
     session.query(AssetModel).delete()
     session.query(AssetEvent).delete()
@@ -79,18 +79,20 @@ def clear_db(session):
     session.commit()
 
 
-def test_fetch_trigger_ids_with_non_task_associations(session):
+def test_fetch_trigger_ids_with_non_task_associations(session, create_task_instance):
     # Create triggers
     asset_trigger = Trigger(classpath="airflow.triggers.testing.SuccessTrigger1", kwargs={})
-    callback_trigger = Trigger(classpath="airflow.triggers.testing.SuccessTrigger2", kwargs={})
+    deadline_trigger = Trigger(classpath="airflow.triggers.testing.SuccessTrigger2", kwargs={})
     other_trigger = Trigger(classpath="airflow.triggers.testing.SuccessTrigger3", kwargs={})
-    session.add_all([asset_trigger, callback_trigger, other_trigger])
-    session.commit()
+    session.add_all([asset_trigger, deadline_trigger, other_trigger])
 
-    # Create callback association
-    callback = TriggererCallback(callback_def=AsyncCallback("classpath.log.error"))
-    callback.trigger = callback_trigger
-    session.add(callback)
+    # Create deadline association
+    dagrun_id = create_task_instance().dag_run.id
+    deadline = Deadline(
+        deadline_time=DEFAULT_DATE, callback=AsyncCallback("classpath.log.error"), dagrun_id=dagrun_id
+    )
+    deadline.trigger = deadline_trigger
+    session.add(deadline)
 
     # Create asset association
     asset = AssetModel("test")
@@ -99,7 +101,7 @@ def test_fetch_trigger_ids_with_non_task_associations(session):
 
     session.commit()
     results = Trigger.fetch_trigger_ids_with_non_task_associations()
-    assert results == {asset_trigger.id, callback_trigger.id}
+    assert results == {asset_trigger.id, deadline_trigger.id}
 
 
 def test_clean_unused(session, create_task_instance):
@@ -152,12 +154,14 @@ def test_clean_unused(session, create_task_instance):
     session.commit()
     assert session.query(AssetModel).count() == 1
 
-    # Create callback with trigger
-    callback = TriggererCallback(
-        callback_def=AsyncCallback("classpath.callback"),
+    # Create deadline with trigger
+    deadline = Deadline(
+        deadline_time=DEFAULT_DATE,
+        callback=AsyncCallback("classpath.callback"),
+        dagrun_id=task_instance.dag_run.id,
     )
-    callback.trigger = trigger6
-    session.add(callback)
+    deadline.trigger = trigger6
+    session.add(deadline)
     session.commit()
 
     # Run clear operation
@@ -167,11 +171,11 @@ def test_clean_unused(session, create_task_instance):
     assert {result.id for result in results} == {trigger1.id, trigger4.id, trigger5.id, trigger6.id}
 
 
-@patch.object(TriggererCallback, "handle_event")
-def test_submit_event(mock_callback_handle_event, session, create_task_instance):
+@patch.object(Deadline, "handle_callback_event")
+def test_submit_event(mock_deadline_submit_event, session, create_task_instance):
     """
     Tests that events submitted to a trigger re-wake their dependent
-    task instances and notify associated assets and callbacks.
+    task instances and notify associated assets and deadlines.
     """
     # Make a trigger
     trigger = Trigger(classpath="airflow.triggers.testing.SuccessTrigger", kwargs={})
@@ -187,12 +191,14 @@ def test_submit_event(mock_callback_handle_event, session, create_task_instance)
     asset.add_trigger(trigger, "test_asset_watcher")
     session.add(asset)
 
-    # Create a callback with the same trigger
-    callback = TriggererCallback(
-        callback_def=AsyncCallback("classpath.callback"),
+    # Create a deadline with the same trigger
+    deadline = Deadline(
+        deadline_time=DEFAULT_DATE,
+        callback=AsyncCallback("classpath.callback"),
+        dagrun_id=task_instance.dag_run.id,
     )
-    callback.trigger = trigger
-    session.add(callback)
+    deadline.trigger = trigger
+    session.add(deadline)
     session.commit()
 
     # Check that the asset has 0 event prior to sending an event to the trigger
@@ -214,8 +220,8 @@ def test_submit_event(mock_callback_handle_event, session, create_task_instance)
     asset_event = session.query(AssetEvent).filter_by(asset_id=asset.id).first()
     assert asset_event.extra == {"from_trigger": True, "payload": payload}
 
-    # Check that the callback's handle_event was called
-    mock_callback_handle_event.assert_called_once_with(event, session)
+    # Check that the deadline's handle_callback_event was called
+    mock_deadline_submit_event.assert_called_once_with(event, session)
 
 
 def test_submit_failure(session, create_task_instance):
@@ -239,7 +245,7 @@ def test_submit_failure(session, create_task_instance):
 
 
 @pytest.mark.parametrize(
-    ("event_cls", "expected"),
+    "event_cls, expected",
     [
         (TaskSuccessEvent, "success"),
         (TaskFailedEvent, "failed"),
@@ -446,29 +452,31 @@ def test_get_sorted_triggers_same_priority_weight(session, create_task_instance)
         created_date=new_logical_date,
     )
     session.add(trigger_asset)
-    trigger_callback = Trigger(
-        classpath="airflow.triggers.testing.TriggerCallback",
+    trigger_deadline = Trigger(
+        classpath="airflow.triggers.testing.TriggerDeadline",
         kwargs={},
         created_date=new_logical_date,
     )
-    session.add(trigger_callback)
+    session.add(trigger_deadline)
     session.commit()
     assert session.query(Trigger).count() == 5
     # Create assets
     asset = AssetModel("test")
     asset.add_trigger(trigger_asset, "test_asset_watcher")
     session.add(asset)
-    # Create callback with trigger
-    callback = TriggererCallback(callback_def=AsyncCallback("classpath.callback"))
-    callback.trigger = trigger_callback
-    session.add(callback)
+    # Create deadline with trigger
+    deadline = Deadline(
+        deadline_time=DEFAULT_DATE, callback=AsyncCallback("classpath.callback"), dagrun_id=TI_old.dag_run.id
+    )
+    deadline.trigger = trigger_deadline
+    session.add(deadline)
     session.commit()
 
     trigger_ids_query = Trigger.get_sorted_triggers(capacity=100, alive_triggerer_ids=[], session=session)
 
-    # Callback triggers should be first, followed by task triggers, then asset triggers
+    # Deadline triggers should be first, followed by task triggers, then asset triggers
     assert trigger_ids_query == [
-        (trigger_callback.id,),
+        (trigger_deadline.id,),
         (trigger_old.id,),
         (trigger_new.id,),
         (trigger_asset.id,),

@@ -43,6 +43,7 @@ pytestmark = pytest.mark.db_test
 class TestVariable:
     @pytest.fixture(autouse=True)
     def setup_test_cases(self):
+        crypto._fernet = None
         db.clear_db_variables()
         SecretCache.reset()
         with conf_vars({("secrets", "use_cache"): "true"}):
@@ -51,13 +52,13 @@ class TestVariable:
             self.mask_secret = m
             yield
         db.clear_db_variables()
+        crypto._fernet = None
 
     @conf_vars({("core", "fernet_key"): "", ("core", "unit_test_mode"): "True"})
     def test_variable_no_encryption(self, session):
         """
         Test variables without encryption
         """
-        crypto.get_fernet.cache_clear()
         Variable.set(key="key", value="value", session=session)
         test_var = session.query(Variable).filter(Variable.key == "key").one()
         assert not test_var.is_encrypted
@@ -71,7 +72,6 @@ class TestVariable:
         """
         Test variables with encryption
         """
-        crypto.get_fernet.cache_clear()
         Variable.set(key="key", value="value", session=session)
         test_var = session.query(Variable).filter(Variable.key == "key").one()
         assert test_var.is_encrypted
@@ -86,7 +86,6 @@ class TestVariable:
         key2 = Fernet.generate_key()
 
         with conf_vars({("core", "fernet_key"): key1.decode()}):
-            crypto.get_fernet.cache_clear()
             Variable.set(key="key", value=test_value, session=session)
             test_var = session.query(Variable).filter(Variable.key == "key").one()
             assert test_var.is_encrypted
@@ -95,7 +94,7 @@ class TestVariable:
 
         # Test decrypt of old value with new key
         with conf_vars({("core", "fernet_key"): f"{key2.decode()},{key1.decode()}"}):
-            crypto.get_fernet.cache_clear()
+            crypto._fernet = None
             assert test_var.val == test_value
 
             # Test decrypt of new value with new key
@@ -336,7 +335,7 @@ class TestVariable:
 
 
 @pytest.mark.parametrize(
-    ("variable_value", "deserialize_json", "expected_masked_values"),
+    "variable_value, deserialize_json, expected_masked_values",
     [
         ("s3cr3t", False, ["s3cr3t"]),
         ('{"api_key": "s3cr3t"}', True, ["s3cr3t"]),

@@ -43,14 +43,8 @@ dependencies = [
     "requests>=2.32.0,<3",
 ]
 
-[tool.pytest]
-addopts = [
-    "-rasl",
-    "--verbosity=2",
-    "-p", "no:flaky",
-    "-p", "no:nose",
-    "-p", "no:legacypath",
-]
+[tool.pytest.ini_options]
+addopts = "-rasl --verbosity=2 -p no:flaky -p no:nose -p no:legacypath"
 norecursedirs = [
     ".eggs",
 ]

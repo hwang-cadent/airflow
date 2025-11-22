@@ -84,11 +84,6 @@
     "githubRepo": "Repositorio de GitHub",
     "restApiReference": "Referencia de REST API"
   },
-  "download": {
-    "download": "Descargar",
-    "hotkey": "d",
-    "tooltip": "Presiona {{hotkey}} para descargar los registros"
-  },
   "duration": "Duración",
   "endDate": "Fecha Final",
   "error": {
@@ -112,8 +107,6 @@
   },
   "filter": "Filtro",
   "filters": {
-    "durationFrom": "Duración Desde",
-    "durationTo": "Duración Hasta",
     "logicalDateFrom": "Fecha Lógica Desde",
     "logicalDateTo": "Fecha Lógica Hasta",
     "runAfterFrom": "Ejecutar Después Desde",

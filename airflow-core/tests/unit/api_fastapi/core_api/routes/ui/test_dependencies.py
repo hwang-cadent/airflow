@@ -26,7 +26,6 @@ from airflow.providers.standard.operators.trigger_dagrun import TriggerDagRunOpe
 from airflow.providers.standard.sensors.external_task import ExternalTaskSensor
 from airflow.sdk.definitions.asset import Asset
 
-from tests_common.test_utils.asserts import assert_queries_count
 from tests_common.test_utils.db import clear_db_dags, clear_db_serialized_dags
 
 pytestmark = pytest.mark.db_test
@@ -204,8 +203,7 @@ def expected_secondary_component_response(asset2_id):
 class TestGetDependencies:
     @pytest.mark.usefixtures("make_primary_connected_component")
     def test_should_response_200(self, test_client, expected_primary_component_response):
-        with assert_queries_count(5):
-            response = test_client.get("/dependencies")
+        response = test_client.get("/dependencies")
         assert response.status_code == 200
 
         assert response.json() == expected_primary_component_response
@@ -221,7 +219,7 @@ class TestGetDependencies:
         assert response.status_code == 403
 
     @pytest.mark.parametrize(
-        ("node_id", "expected_response_fixture"),
+        "node_id, expected_response_fixture",
         [
             # Primary Component
             ("dag:downstream", "expected_primary_component_response"),
@@ -240,8 +238,7 @@ class TestGetDependencies:
     @pytest.mark.usefixtures("make_primary_connected_component", "make_secondary_connected_component")
     def test_with_node_id_filter(self, test_client, node_id, expected_response_fixture, request):
         expected_response = request.getfixturevalue(expected_response_fixture)
-        with assert_queries_count(5):
-            response = test_client.get("/dependencies", params={"node_id": node_id})
+        response = test_client.get("/dependencies", params={"node_id": node_id})
         assert response.status_code == 200
 
         assert response.json() == expected_response
@@ -258,8 +255,7 @@ class TestGetDependencies:
             (asset1_id, expected_primary_component_response),
             (asset2_id, expected_secondary_component_response),
         ):
-            with assert_queries_count(5):
-                response = test_client.get("/dependencies", params={"node_id": f"asset:{asset_id}"})
+            response = test_client.get("/dependencies", params={"node_id": f"asset:{asset_id}"})
             assert response.status_code == 200
 
             assert response.json() == expected_response

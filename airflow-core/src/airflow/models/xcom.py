@@ -21,7 +21,7 @@ import json
 import logging
 from collections.abc import Iterable
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from sqlalchemy import (
     JSON,
@@ -109,7 +109,7 @@ class XComModel(TaskInstanceDependencies):
     task = relationship(
         "TaskInstance",
         viewonly=True,
-        lazy="noload",
+        lazy="selectin",
     )
 
     @classmethod
@@ -167,7 +167,6 @@ class XComModel(TaskInstanceDependencies):
         task_id: str,
         run_id: str,
         map_index: int = -1,
-        serialize: bool = True,
         session: Session = NEW_SESSION,
     ) -> None:
         """
@@ -179,8 +178,7 @@ class XComModel(TaskInstanceDependencies):
         :param task_id: Task ID.
         :param run_id: DAG run ID for the task.
         :param map_index: Optional map index to assign XCom for a mapped task.
-        :param serialize: Optional parameter to specify if value should be serialized or not.
-            The default is ``True``.
+            The default is ``-1`` (set for a non-mapped task).
         :param session: Database session. If not given, a new session will be
             created for this function.
         """
@@ -217,15 +215,14 @@ class XComModel(TaskInstanceDependencies):
             )
             value = list(value)
 
-        if serialize:
-            value = cls.serialize_value(
-                value=value,
-                key=key,
-                task_id=task_id,
-                dag_id=dag_id,
-                run_id=run_id,
-                map_index=map_index,
-            )
+        value = cls.serialize_value(
+            value=value,
+            key=key,
+            task_id=task_id,
+            dag_id=dag_id,
+            run_id=run_id,
+            map_index=map_index,
+        )
 
         # Remove duplicate XComs and insert a new one.
         session.execute(
@@ -238,7 +235,7 @@ class XComModel(TaskInstanceDependencies):
             )
         )
 
-        new = cls(
+        new = cast("Any", cls)(  # Work around Mypy complaining model not defining '__init__'.
             dag_run_id=dag_run_id,
             key=key,
             value=value,
@@ -261,7 +258,7 @@ class XComModel(TaskInstanceDependencies):
         map_indexes: int | Iterable[int] | None = None,
         include_prior_dates: bool = False,
         limit: int | None = None,
-    ) -> Select[tuple[XComModel]]:
+    ) -> Select:
         """
         Composes a query to get one or more XCom entries.
 
@@ -351,7 +348,7 @@ class XComModel(TaskInstanceDependencies):
             raise ValueError("XCom value must be JSON serializable")
 
     @staticmethod
-    def deserialize_value(result: Any) -> Any:
+    def deserialize_value(result) -> Any:
         """
         Deserialize XCom value from a database result.
 
@@ -400,7 +397,7 @@ class LazyXComSelectSequence(LazySelectSequence[Any]):
     """
 
     @staticmethod
-    def _rebuild_select(stmt: TextClause) -> Select[tuple[Any]]:
+    def _rebuild_select(stmt: TextClause) -> Select:
         return select(XComModel.value).from_statement(stmt)
 
     @staticmethod

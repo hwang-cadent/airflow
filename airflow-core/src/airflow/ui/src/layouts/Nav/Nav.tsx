@@ -19,7 +19,7 @@
 import { Box, Flex, VStack } from "@chakra-ui/react";
 import { useTranslation } from "react-i18next";
 import { FiDatabase, FiHome } from "react-icons/fi";
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 import {
   useAuthLinksServiceGetAuthMenus,
@@ -140,35 +140,27 @@ export const Nav = () => {
       height="100%"
       justifyContent="space-between"
       position="fixed"
-      py={1}
+      py={3}
       top={0}
-      width={16}
-      zIndex="docked"
+      width={20}
+      zIndex={2}
     >
-      <Flex alignItems="center" flexDir="column" gap={1} width="100%">
-        <Box alignItems="center" asChild boxSize={14} display="flex" justifyContent="center">
-          <Link title={translate("nav.home")} to="/">
-            <AirflowPin
-              _motionSafe={{
-                _hover: {
-                  transform: "rotate(360deg)",
-                  transition: "transform 0.8s ease-in-out",
-                },
-              }}
-              boxSize={8}
-            />
-          </Link>
+      <Flex alignItems="center" flexDir="column" width="100%">
+        <Box mb={3}>
+          <NavLink to="/">
+            <AirflowPin height="35px" width="35px" />
+          </NavLink>
         </Box>
-        <NavButton icon={FiHome} title={translate("nav.home")} to="/" />
+        <NavButton icon={<FiHome size="28px" />} title={translate("nav.home")} to="/" />
         <NavButton
           disabled={!authLinks?.authorized_menu_items.includes("Dags")}
-          icon={DagIcon}
+          icon={<DagIcon height="28px" width="28px" />}
           title={translate("nav.dags")}
           to="dags"
         />
         <NavButton
           disabled={!authLinks?.authorized_menu_items.includes("Assets")}
-          icon={FiDatabase}
+          icon={<FiDatabase size="28px" />}
           title={translate("nav.assets")}
           to="assets"
         />
@@ -183,7 +175,7 @@ export const Nav = () => {
         <SecurityButton />
         <PluginMenus navItems={navItemsWithLegacy} />
       </Flex>
-      <Flex flexDir="column" gap={1}>
+      <Flex flexDir="column">
         <DocsButton
           externalViews={docsItems}
           showAPI={authLinks?.authorized_menu_items.includes("Docs")}

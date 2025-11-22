@@ -66,11 +66,7 @@ def run_and_report(command, task_key):
     try:
         log.info("Starting execution for task: %s", task_key)
         result = subprocess.run(
-            command,
-            check=False,
-            shell=isinstance(command, str),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
+            command, shell=isinstance(command, str), stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
         return_code = result.returncode
         log.info("Execution completed for task %s with return code %s", task_key, return_code)

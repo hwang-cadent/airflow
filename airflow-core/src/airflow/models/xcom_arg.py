@@ -27,10 +27,11 @@ from sqlalchemy.orm import Session
 
 from airflow.models.referencemixin import ReferenceMixin
 from airflow.models.xcom import XCOM_RETURN_KEY
+from airflow.sdk.definitions._internal.types import ArgNotSet
 from airflow.sdk.definitions.xcom_arg import XComArg
-from airflow.serialization.definitions.notset import NOTSET, is_arg_set
 from airflow.utils.db import exists_query
 from airflow.utils.state import State
+from airflow.utils.types import NOTSET
 
 __all__ = ["XComArg", "get_task_map_length"]
 
@@ -149,7 +150,7 @@ def get_task_map_length(xcom_arg: SchedulerXComArg, run_id: str, *, session: Ses
 
 
 @get_task_map_length.register
-def _(xcom_arg: SchedulerPlainXComArg, run_id: str, *, session: Session) -> int | None:
+def _(xcom_arg: SchedulerPlainXComArg, run_id: str, *, session: Session):
     from airflow.models.mappedoperator import is_mapped
     from airflow.models.taskinstance import TaskInstance
     from airflow.models.taskmap import TaskMap
@@ -192,23 +193,23 @@ def _(xcom_arg: SchedulerPlainXComArg, run_id: str, *, session: Session) -> int 
 
 
 @get_task_map_length.register
-def _(xcom_arg: SchedulerMapXComArg, run_id: str, *, session: Session) -> int | None:
+def _(xcom_arg: SchedulerMapXComArg, run_id: str, *, session: Session):
     return get_task_map_length(xcom_arg.arg, run_id, session=session)
 
 
 @get_task_map_length.register
-def _(xcom_arg: SchedulerZipXComArg, run_id: str, *, session: Session) -> int | None:
+def _(xcom_arg: SchedulerZipXComArg, run_id: str, *, session: Session):
     all_lengths = (get_task_map_length(arg, run_id, session=session) for arg in xcom_arg.args)
     ready_lengths = [length for length in all_lengths if length is not None]
     if len(ready_lengths) != len(xcom_arg.args):
         return None  # If any of the referenced XComs is not ready, we are not ready either.
-    if is_arg_set(xcom_arg.fillvalue):
-        return max(ready_lengths)
-    return min(ready_lengths)
+    if isinstance(xcom_arg.fillvalue, ArgNotSet):
+        return min(ready_lengths)
+    return max(ready_lengths)
 
 
 @get_task_map_length.register
-def _(xcom_arg: SchedulerConcatXComArg, run_id: str, *, session: Session) -> int | None:
+def _(xcom_arg: SchedulerConcatXComArg, run_id: str, *, session: Session):
     all_lengths = (get_task_map_length(arg, run_id, session=session) for arg in xcom_arg.args)
     ready_lengths = [length for length in all_lengths if length is not None]
     if len(ready_lengths) != len(xcom_arg.args):

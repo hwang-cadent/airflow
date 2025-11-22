@@ -26,41 +26,6 @@
 Changelog
 ---------
 
-3.1.4
-.....
-
-Misc
-~~~~
-
-* ``Convert all airflow distributions to be compliant with ASF requirements (#58138)``
-* ``Migrate 'apache/druid' provider to 'common.compat' (#57072)``
-
-.. Below changes are excluded from the changelog. Move them to
-   appropriate section above if needed. Do not delete the lines(!):
-   * ``Delete all unnecessary LICENSE Files (#58191)``
-   * ``Enable PT006 rule to 13 files in providers (apache) (#57998)``
-
-3.1.3
-.....
-
-Misc
-~~~~
-
-* ``Fix mypy type errors in apache-drill provider for sqlalchemy 2 upgrade (#56795)``
-
-Doc-only
-~~~~~~~~
-
-* ``Remove placeholder Release Date in changelog and index files (#56056)``
-
-.. Below changes are excluded from the changelog. Move them to
-   appropriate section above if needed. Do not delete the lines(!):
-   * ``Prepare release for Sep 2025 2nd wave of providers (#55688)``
-   * ``Prepare release for Sep 2025 1st wave of providers (#55203)``
-   * ``Fix Airflow 2 reference in README/index of providers (#55240)``
-   * ``Make term Dag consistent in providers docs (#55101)``
-   * ``Switch pre-commit to prek (#54258)``
-
 3.1.2
 .....
 
@@ -173,6 +138,8 @@ Misc
 .. Below changes are excluded from the changelog. Move them to
    appropriate section above if needed. Do not delete the lines(!):
    * ``Use Python 3.9 as target version for Ruff & Black rules (#44298)``
+
+.. Review and move the new changes to one of the sections above:
    * ``Update path of example dags in docs (#45069)``
 
 2.8.1
@@ -425,8 +392,7 @@ Misc
 
 * ``Add common-sql lower bound for common-sql (#25789)``
 
-.. Below changes are excluded from the changelog. Move them to
-   appropriate section above if needed. Do not delete the lines(!):
+.. Review and move the new changes to one of the sections above:
    * ``Apply PEP-563 (Postponed Evaluation of Annotations) to non-core airflow (#26289)``
 
 2.2.0

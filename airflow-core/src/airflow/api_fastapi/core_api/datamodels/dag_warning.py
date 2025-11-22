@@ -17,7 +17,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
 from datetime import datetime
 
 from pydantic import AliasPath, Field
@@ -39,5 +38,5 @@ class DAGWarningResponse(BaseModel):
 class DAGWarningCollectionResponse(BaseModel):
     """DAG warning collection serializer for responses."""
 
-    dag_warnings: Iterable[DAGWarningResponse]
+    dag_warnings: list[DAGWarningResponse]
     total_entries: int

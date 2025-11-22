@@ -49,12 +49,9 @@ def check_and_fix_file(path: Path):
                     f"prek-hook: {path}: Import from wrong provider: {imported_provider} (should be {provider})"
                 )
                 # auto fix: rewrite the import correctly
-                new_lines.append(f"from airflow.providers.{provider}.version_compat import {rest}")
+                line = f"from airflow.providers.{provider}.version_compat import {rest}"
                 changed = True
-            else:
-                new_lines.append(line)
-        else:
-            new_lines.append(line)
+        new_lines.append(line)
     if changed:
         path.write_text("\n".join(new_lines) + "\n")
     return not changed

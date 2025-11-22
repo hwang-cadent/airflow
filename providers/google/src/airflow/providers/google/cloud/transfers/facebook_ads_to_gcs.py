@@ -33,7 +33,7 @@ from airflow.providers.google.version_compat import BaseOperator
 if TYPE_CHECKING:
     from facebook_business.adobjects.adsinsights import AdsInsights
 
-    from airflow.providers.common.compat.sdk import Context
+    from airflow.utils.context import Context
 
 
 class FlushAction(Enum):

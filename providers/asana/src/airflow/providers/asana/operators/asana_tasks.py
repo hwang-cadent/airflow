@@ -20,10 +20,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from airflow.providers.asana.hooks.asana import AsanaHook
-from airflow.providers.common.compat.sdk import BaseOperator
+from airflow.providers.asana.version_compat import BaseOperator
 
 if TYPE_CHECKING:
-    from airflow.providers.common.compat.sdk import Context
+    try:
+        from airflow.sdk.definitions.context import Context
+    except ImportError:
+        # TODO: Remove once provider drops support for Airflow 2
+        from airflow.utils.context import Context
 
 
 class AsanaCreateTaskOperator(BaseOperator):

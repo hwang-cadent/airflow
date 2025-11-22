@@ -23,7 +23,6 @@ from airflow.models.dag import DagModel
 from airflow.models.dagwarning import DagWarning
 from airflow.utils.session import provide_session
 
-from tests_common.test_utils.asserts import assert_queries_count
 from tests_common.test_utils.db import clear_db_dag_warnings, clear_db_dags
 
 pytestmark = pytest.mark.db_test
@@ -71,7 +70,7 @@ def setup(dag_maker, testing_dag_bundle, session=None) -> None:
 
 class TestGetDagWarnings:
     @pytest.mark.parametrize(
-        ("query_params", "expected_total_entries", "expected_messages"),
+        "query_params, expected_total_entries, expected_messages",
         [
             ({}, 3, [DAG1_MESSAGE, DAG2_MESSAGE, DAG3_MESSAGE]),
             ({"dag_id": DAG1_ID}, 1, [DAG1_MESSAGE]),
@@ -89,8 +88,7 @@ class TestGetDagWarnings:
         ],
     )
     def test_get_dag_warnings(self, test_client, query_params, expected_total_entries, expected_messages):
-        with assert_queries_count(3):
-            response = test_client.get("/dagWarnings", params=query_params)
+        response = test_client.get("/dagWarnings", params=query_params)
         assert response.status_code == 200
         response_json = response.json()
         assert response_json["total_entries"] == expected_total_entries

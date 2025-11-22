@@ -69,16 +69,8 @@ index = 0
 
 
 @pytest.mark.parametrize(
-    (
-        "return_last",
-        "split_statements",
-        "sql",
-        "cursor_calls",
-        "cursor_descriptions",
-        "cursor_results",
-        "hook_descriptions",
-        "hook_results",
-    ),
+    "return_last, split_statements, sql, cursor_calls,"
+    "cursor_descriptions, cursor_results, hook_descriptions, hook_results, ",
     [
         pytest.param(
             True,

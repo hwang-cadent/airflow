@@ -17,9 +17,6 @@
 # under the License.
 from __future__ import annotations
 
-from unittest.mock import patch
-
-import pagerduty
 import pytest
 
 from airflow.models import Connection
@@ -60,8 +57,7 @@ class TestPagerdutyHook:
         hook = PagerdutyHook(token="pagerduty_param_token", pagerduty_conn_id=DEFAULT_CONN_ID)
         assert hook.token == "pagerduty_param_token", "token initialised."
 
-    @patch.object(pagerduty.RestApiV2Client, "rget")
-    def test_get_service(self, rget):
+    def test_get_service(self, requests_mock):
         hook = PagerdutyHook(pagerduty_conn_id=DEFAULT_CONN_ID)
         mock_response_body = {
             "id": "PZYX321",
@@ -71,7 +67,7 @@ class TestPagerdutyHook:
             "summary": "Apache Airflow",
             "self": "https://api.pagerduty.com/services/PZYX321",
         }
-        rget.return_value = mock_response_body
+        requests_mock.get("https://api.pagerduty.com/services/PZYX321", json={"service": mock_response_body})
         client = hook.client()
         resp = client.rget("/services/PZYX321")
         assert resp == mock_response_body

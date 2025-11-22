@@ -23,7 +23,7 @@ import logging
 from collections.abc import Callable
 from typing import Any, cast
 
-from airflow.providers.common.compat.sdk import BaseHook
+from airflow.providers.ftp.version_compat import BaseHook
 
 logger = logging.getLogger(__name__)
 

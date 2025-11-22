@@ -17,37 +17,13 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import overload
 
 
-@overload
-def from_datetime_to_zulu(dt: datetime) -> str: ...
-@overload
-def from_datetime_to_zulu(dt: None) -> None: ...
-def from_datetime_to_zulu(dt: datetime | None) -> str | None:
-    """
-    Format a UTC datetime to an ISO-8601 Zulu string with milliseconds.
-
-    - If `dt` is None, return None (useful for optional fields in tests).
-    - This function assumes `dt` already represents UTC (e.g. tzinfo=UTC) and
-      does not perform timezone conversion.
-    """
-    if dt is None:
-        return None
+def from_datetime_to_zulu(dt: datetime) -> str:
+    """Format a datetime object to a string in Zulu time."""
     return dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 
-@overload
-def from_datetime_to_zulu_without_ms(dt: datetime) -> str: ...
-@overload
-def from_datetime_to_zulu_without_ms(dt: None) -> None: ...
-def from_datetime_to_zulu_without_ms(dt: datetime | None) -> str | None:
-    """
-    Format a UTC datetime to an ISO-8601 Zulu string without milliseconds.
-
-    - If `dt` is None, return None (useful for optional fields in tests).
-    - This function assumes `dt` already represents UTC and does not convert tz.
-    """
-    if dt is None:
-        return None
+def from_datetime_to_zulu_without_ms(dt: datetime) -> str:
+    """Format a datetime object to a string in Zulu time without milliseconds."""
     return dt.strftime("%Y-%m-%dT%H:%M:%SZ")

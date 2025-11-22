@@ -25,17 +25,21 @@ class TestPodReader:
     """Tests RBAC Pod Reader."""
 
     @pytest.mark.parametrize(
-        ("webserver", "airflow_version", "expected"),
+        "triggerer, webserver, airflow_version, expected",
         [
-            (True, "2.9.0", ["release-name-airflow-webserver"]),
-            (False, "2.9.0", []),
-            (True, "3.0.0", ["release-name-airflow-api-server"]),
-            (False, "3.0.0", ["release-name-airflow-api-server"]),
+            (True, True, "2.9.0", ["release-name-airflow-webserver", "release-name-airflow-triggerer"]),
+            (True, False, "2.9.0", ["release-name-airflow-triggerer"]),
+            (False, True, "2.9.0", ["release-name-airflow-webserver"]),
+            (False, False, "2.9.0", []),
+            (True, True, "3.0.0", ["release-name-airflow-api-server", "release-name-airflow-triggerer"]),
+            (True, False, "3.0.0", ["release-name-airflow-api-server", "release-name-airflow-triggerer"]),
+            (False, True, "3.0.0", ["release-name-airflow-api-server"]),
         ],
     )
-    def test_pod_log_reader_rolebinding(self, webserver, airflow_version, expected):
+    def test_pod_log_reader_rolebinding(self, triggerer, webserver, airflow_version, expected):
         docs = render_chart(
             values={
+                "triggerer": {"enabled": triggerer},
                 "webserver": {"allowPodLogReading": webserver},
                 "apiServer": {"allowPodLogReading": airflow_version >= "3.0.0"},
                 "airflowVersion": airflow_version,
@@ -46,15 +50,18 @@ class TestPodReader:
         assert actual == expected
 
     @pytest.mark.parametrize(
-        ("webserver", "expected"),
+        "triggerer, webserver, expected",
         [
-            (True, "release-name-pod-log-reader-role"),
-            (False, None),
+            (True, True, "release-name-pod-log-reader-role"),
+            (True, False, "release-name-pod-log-reader-role"),
+            (False, True, "release-name-pod-log-reader-role"),
+            (False, False, None),
         ],
     )
-    def test_pod_log_reader_role(self, webserver, expected):
+    def test_pod_log_reader_role(self, triggerer, webserver, expected):
         docs = render_chart(
             values={
+                "triggerer": {"enabled": triggerer},
                 "webserver": {"allowPodLogReading": webserver},
             },
             show_only=["templates/rbac/pod-log-reader-role.yaml"],
@@ -63,7 +70,7 @@ class TestPodReader:
         assert actual == expected
 
     @pytest.mark.parametrize(
-        ("multiNamespaceMode", "namespace", "expectedRole", "expectedRoleBinding"),
+        "multiNamespaceMode, namespace, expectedRole, expectedRoleBinding",
         [
             (
                 True,
@@ -110,7 +117,7 @@ class TestPodReader:
             assert actualRoleRefKind == "Role"
 
     @pytest.mark.parametrize(
-        ("multiNamespaceMode", "namespace", "expectedRole"),
+        "multiNamespaceMode, namespace, expectedRole",
         [
             (True, "namespace", "namespace-release-name-pod-log-reader-role"),
             (True, "other-ns", "other-ns-release-name-pod-log-reader-role"),

@@ -20,10 +20,10 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 from airflow.providers.apache.livy.hooks.livy import LivyHook
-from airflow.providers.common.compat.sdk import BaseSensorOperator
+from airflow.providers.apache.livy.version_compat import BaseSensorOperator
 
 if TYPE_CHECKING:
-    from airflow.providers.common.compat.sdk import Context
+    from airflow.utils.context import Context
 
 
 class LivySensor(BaseSensorOperator):

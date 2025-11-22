@@ -56,4 +56,3 @@ configuring an Airflow environment.
     dynamic-dag-generation
     docker-compose/index
     run-with-self-signed-certificate
-    memory-profiling

@@ -47,6 +47,7 @@ from airflow.providers_manager import ProvidersManager
 sys.path.insert(0, str(pathlib.Path(__file__).parent.resolve()))
 from in_container_utils import (
     AIRFLOW_CORE_SOURCES_PATH,
+    AIRFLOW_DOCS_PATH,
     AIRFLOW_PROVIDERS_PATH,
     AIRFLOW_ROOT_PATH,
 )
@@ -589,37 +590,32 @@ def check_doc_files(yaml_files: dict[str, dict]) -> tuple[int, int]:
         console.print(suspended_providers)
 
     expected_doc_files = itertools.chain(
-        AIRFLOW_PROVIDERS_PATH.glob("**/docs/operators/**/*.rst"),
-        AIRFLOW_PROVIDERS_PATH.glob("**/docs/operators.rst"),
-        AIRFLOW_PROVIDERS_PATH.glob("**/docs/sensors/**/*.rst"),
-        AIRFLOW_PROVIDERS_PATH.glob("**/docs/sensors.rst"),
-        AIRFLOW_PROVIDERS_PATH.glob("**/docs/transfer/**/*.rst"),
-        AIRFLOW_PROVIDERS_PATH.glob("**/docs/transfer.rst"),
+        AIRFLOW_DOCS_PATH.glob("apache-airflow-providers-*/operators/**/*.rst"),
+        AIRFLOW_DOCS_PATH.glob("apache-airflow-providers-*/transfer/**/*.rst"),
     )
-    expected_relative_doc_files = sorted([f.relative_to(AIRFLOW_PROVIDERS_PATH) for f in expected_doc_files])
-    console.print("Expected relative doc files:")
-    console.print(expected_relative_doc_files)
+
     expected_doc_urls = {
-        f"/docs/apache-airflow-providers-{f.parts[0]}/{'/'.join(f.parts[2:])}"
-        for f in expected_relative_doc_files
-        if f.name != "index.rst" and "_partials" not in f.parts and f.parts[1] == "docs"
+        f"/docs/{f.relative_to(AIRFLOW_DOCS_PATH).as_posix()}"
+        for f in expected_doc_files
+        if f.name != "index.rst"
+        and "_partials" not in f.parts
+        and not f.relative_to(AIRFLOW_DOCS_PATH).as_posix().startswith(tuple(suspended_providers))
     } | {
-        f"/docs/apache-airflow-providers-{f.parts[0]}-{f.parts[1]}/{'/'.join(f.parts[3:])}"
-        for f in expected_relative_doc_files
-        if f.name != "index.rst" and "_partials" not in f.parts and f.parts[2] == "docs"
+        f"/docs/{f.relative_to(AIRFLOW_DOCS_PATH).as_posix()}"
+        for f in AIRFLOW_DOCS_PATH.glob("apache-airflow-providers-*/operators.rst")
+        if not f.relative_to(AIRFLOW_DOCS_PATH).as_posix().startswith(tuple(suspended_providers))
     }
     if suspended_logos:
         console.print("[yellow]Suspended logos:[/]")
         console.print(suspended_logos)
         console.print()
-    found_logos = itertools.chain(
-        AIRFLOW_PROVIDERS_PATH.glob("**/integration-logos/*.png"),
-        AIRFLOW_PROVIDERS_PATH.glob("**/integration-logos/*.svg"),
-    )
-    expected_logo_urls = list({f"/docs/integration-logos/{f.name}" for f in found_logos if f.is_file()})
-    expected_logo_urls = sorted(set(expected_logo_urls) - suspended_logos)
-    console.print("Expected logo urls:")
-    console.print(expected_logo_urls)
+    expected_logo_urls = {
+        f"/{f.relative_to(AIRFLOW_DOCS_PATH).as_posix()}"
+        for f in (AIRFLOW_DOCS_PATH / "integration-logos").rglob("*")
+        if f.is_file()
+        and not f"/{f.relative_to(AIRFLOW_DOCS_PATH).as_posix()}".startswith(tuple(suspended_logos))
+    }
+
     try:
         console.print("Checking document urls")
         assert_sets_equal(
@@ -721,20 +717,18 @@ if __name__ == "__main__":
     ProvidersManager().initialize_providers_configuration()
     architecture = Architecture.get_current()
     console.print(f"Verifying packages on {architecture} architecture. Platform: {platform.machine()}.")
-    provider_files_found = [
+    provider_files_pattern = [
         path
-        for path in pathlib.Path(AIRFLOW_ROOT_PATH, "providers").rglob("provider.yaml")
+        for path in pathlib.Path(AIRFLOW_ROOT_PATH, "providers", "src", "airflow", "providers").rglob(
+            "provider.yaml"
+        )
         if "/.venv/" not in path.as_posix()
     ]
-    console.print(f"Found {len(provider_files_found)} provider.yaml files:")
-    all_provider_files = sorted(str(path) for path in provider_files_found)
+    all_provider_files = sorted(str(path) for path in provider_files_pattern)
     if len(sys.argv) > 1:
-        paths = [os.fspath(AIRFLOW_ROOT_PATH / "providers" / f) for f in sorted(sys.argv[1:])]
-        console.print("Provider.yaml files were specified explicitly")
+        paths = [os.fspath(AIRFLOW_ROOT_PATH / f) for f in sorted(sys.argv[1:])]
     else:
         paths = all_provider_files
-        console.print("Provider.yaml files were found in all providers")
-    console.print(paths)
 
     all_parsed_yaml_files: dict[str, dict] = _load_package_data(paths)
 

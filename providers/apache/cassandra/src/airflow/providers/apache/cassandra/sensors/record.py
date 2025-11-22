@@ -21,10 +21,10 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 from airflow.providers.apache.cassandra.hooks.cassandra import CassandraHook
-from airflow.providers.common.compat.sdk import BaseSensorOperator
+from airflow.providers.apache.cassandra.version_compat import BaseSensorOperator
 
 if TYPE_CHECKING:
-    from airflow.providers.common.compat.sdk import Context
+    from airflow.utils.context import Context
 
 
 class CassandraRecordSensor(BaseSensorOperator):

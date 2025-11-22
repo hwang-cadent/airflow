@@ -34,20 +34,9 @@ from sshtunnel import SSHTunnelForwarder
 from tenacity import Retrying, stop_after_attempt, wait_fixed, wait_random
 
 from airflow.exceptions import AirflowException
-from airflow.providers.common.compat.sdk import BaseHook
+from airflow.providers.ssh.version_compat import BaseHook
 from airflow.utils.platform import getuser
-
-try:
-    from airflow.sdk.definitions._internal.types import NOTSET, ArgNotSet
-except ImportError:
-    from airflow.utils.types import NOTSET, ArgNotSet  # type: ignore[attr-defined,no-redef]
-try:
-    from airflow.sdk.definitions._internal.types import is_arg_set
-except ImportError:
-
-    def is_arg_set(value):  # type: ignore[misc,no-redef]
-        return value is not NOTSET
-
+from airflow.utils.types import NOTSET, ArgNotSet
 
 CMD_TIMEOUT = 10
 
@@ -449,9 +438,9 @@ class SSHHook(BaseHook):
         self.log.info("Running command: %s", command)
 
         cmd_timeout: float | None
-        if is_arg_set(timeout):
+        if not isinstance(timeout, ArgNotSet):
             cmd_timeout = timeout
-        elif is_arg_set(self.cmd_timeout):
+        elif not isinstance(self.cmd_timeout, ArgNotSet):
             cmd_timeout = self.cmd_timeout
         else:
             cmd_timeout = CMD_TIMEOUT

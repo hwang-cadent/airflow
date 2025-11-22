@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import inspect
-from collections.abc import Iterable, Mapping
+from collections import abc
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
@@ -127,7 +127,7 @@ class DAGPatchBody(StrictBaseModel):
 class DAGCollectionResponse(BaseModel):
     """DAG Collection serializer for responses."""
 
-    dags: Iterable[DAGResponse]
+    dags: list[DAGResponse]
     total_entries: int
 
 
@@ -153,12 +153,12 @@ class DAGDetailsResponse(DAGResponse):
     start_date: datetime | None
     end_date: datetime | None
     is_paused_upon_creation: bool | None
-    params: Mapping | None
+    params: abc.Mapping | None
     render_template_as_native_obj: bool
     template_search_path: list[str] | None
     timezone: str | None
     last_parsed: datetime | None
-    default_args: Mapping | None
+    default_args: abc.Mapping | None
     owner_links: dict[str, str] | None = None
     is_favorite: bool = False
 
@@ -202,9 +202,7 @@ class DAGDetailsResponse(DAGResponse):
     @property
     def latest_dag_version(self) -> DagVersionResponse | None:
         """Return the latest DagVersion."""
-        latest_dag_version = DagVersion.get_latest_version(
-            self.dag_id, load_dag_model=True, load_bundle_model=True
-        )
+        latest_dag_version = DagVersion.get_latest_version(self.dag_id, load_dag_model=True)
         if latest_dag_version is None:
             return latest_dag_version
         return DagVersionResponse.model_validate(latest_dag_version)

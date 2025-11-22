@@ -22,7 +22,7 @@ from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any
 
 from airflow.providers.apache.spark.hooks.spark_connect import SparkConnectHook
-from airflow.providers.common.compat.sdk import (
+from airflow.providers.apache.spark.version_compat import (
     BaseHook,
     DecoratedOperator,
     TaskDecorator,
@@ -31,7 +31,8 @@ from airflow.providers.common.compat.sdk import (
 from airflow.providers.common.compat.standard.operators import PythonOperator
 
 if TYPE_CHECKING:
-    from airflow.providers.common.compat.sdk import Context
+    from airflow.utils.context import Context
+
 SPARK_CONTEXT_KEYS = ["spark", "sc"]
 
 

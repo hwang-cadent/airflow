@@ -41,8 +41,6 @@ if TYPE_CHECKING:
     from kubernetes.client.models.v1_pod import V1Pod
     from sqlalchemy.exc import OperationalError
     from sqlalchemy.orm import Query, Session
-    from sqlalchemy.sql import Select
-    from sqlalchemy.sql.elements import ColumnElement
     from sqlalchemy.types import TypeEngine
 
     from airflow.typing_compat import Self
@@ -54,17 +52,10 @@ try:
     from sqlalchemy.orm import mapped_column
 except ImportError:
     # fallback for SQLAlchemy < 2.0
-    def mapped_column(*args, **kwargs):  # type: ignore[misc]
+    def mapped_column(*args, **kwargs):
         from sqlalchemy import Column
 
         return Column(*args, **kwargs)
-
-
-def get_dialect_name(session: Session) -> str | None:
-    """Safely get the name of the dialect associated with the given session."""
-    if (bind := session.get_bind()) is None:
-        raise ValueError("No bind/engine is associated with the provided Session")
-    return getattr(bind.dialect, "name", None)
 
 
 class UtcDateTime(TypeDecorator):
@@ -313,7 +304,7 @@ class ExecutorConfigType(PickleType):
             return False
 
 
-def nulls_first(col: ColumnElement, session: Session) -> ColumnElement:
+def nulls_first(col, session: Session) -> dict[str, Any]:
     """
     Specify *NULLS FIRST* to the column ordering.
 
@@ -321,7 +312,7 @@ def nulls_first(col: ColumnElement, session: Session) -> ColumnElement:
     Other databases do not need it since NULL values are considered lower than
     any other values, and appear first when the order is ASC (ascending).
     """
-    if get_dialect_name(session) == "postgresql":
+    if session.bind.dialect.name == "postgresql":
         return nullsfirst(col)
     return col
 
@@ -330,14 +321,14 @@ USE_ROW_LEVEL_LOCKING: bool = conf.getboolean("scheduler", "use_row_level_lockin
 
 
 def with_row_locks(
-    query: Query[Any] | Select[Any],
+    query: Query,
     session: Session,
     *,
     nowait: bool = False,
     skip_locked: bool = False,
     key_share: bool = True,
     **kwargs,
-) -> Query[Any] | Select[Any]:
+) -> Query:
     """
     Apply with_for_update to the SQLAlchemy query if row level locking is in use.
 
@@ -357,19 +348,12 @@ def with_row_locks(
     :param kwargs: Extra kwargs to pass to with_for_update (of, nowait, skip_locked, etc)
     :return: updated query
     """
-    try:
-        dialect_name = get_dialect_name(session)
-    except ValueError:
-        return query
-    if not dialect_name:
-        return query
+    dialect = session.bind.dialect
 
     # Don't use row level locks if the MySQL dialect (Mariadb & MySQL < 8) does not support it.
     if not USE_ROW_LEVEL_LOCKING:
         return query
-    if dialect_name == "mysql" and not getattr(
-        session.bind.dialect if session.bind else None, "supports_for_update_of", False
-    ):
+    if dialect.name == "mysql" and not dialect.supports_for_update_of:
         return query
     if nowait:
         kwargs["nowait"] = True
@@ -456,9 +440,7 @@ def is_lock_not_available_error(error: OperationalError):
     #               is set.'
     # MySQL: 1205, 'Lock wait timeout exceeded; try restarting transaction
     #              (when NOWAIT isn't available)
-    db_err_code = getattr(error.orig, "pgcode", None) or (
-        error.orig.args[0] if error.orig and error.orig.args else None
-    )
+    db_err_code = getattr(error.orig, "pgcode", None) or error.orig.args[0]
 
     # We could test if error.orig is an instance of
     # psycopg2.errors.LockNotAvailable/_mysql_exceptions.OperationalError, but that involves

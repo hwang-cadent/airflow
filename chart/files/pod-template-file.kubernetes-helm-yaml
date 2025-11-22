@@ -216,7 +216,10 @@ spec:
   {{- if .Values.workers.runtimeClassName }}
   runtimeClassName: {{ .Values.workers.runtimeClassName }}
   {{- end }}
-  imagePullSecrets: {{- include "image_pull_secrets" . | nindent 4 }}
+  {{- if or .Values.registry.secretName .Values.registry.connection }}
+  imagePullSecrets:
+    - name: {{ template "registry_secret" . }}
+  {{- end }}
   {{- if .Values.workers.hostAliases }}
   hostAliases: {{- toYaml .Values.workers.hostAliases | nindent 4 }}
   {{- end }}

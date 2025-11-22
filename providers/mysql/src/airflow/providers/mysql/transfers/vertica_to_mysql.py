@@ -33,12 +33,16 @@ except ImportError:
         "installed in case you see compilation error during installation."
     )
 
-from airflow.providers.common.compat.sdk import BaseOperator
 from airflow.providers.mysql.hooks.mysql import MySqlHook
+from airflow.providers.mysql.version_compat import BaseOperator
 from airflow.providers.vertica.hooks.vertica import VerticaHook
 
 if TYPE_CHECKING:
-    from airflow.providers.common.compat.sdk import Context
+    try:
+        from airflow.sdk.definitions.context import Context
+    except ImportError:
+        # TODO: Remove once provider drops support for Airflow 2
+        from airflow.utils.context import Context
 
 
 class VerticaToMySqlOperator(BaseOperator):
@@ -145,13 +149,13 @@ class VerticaToMySqlOperator(BaseOperator):
                 self._run_preoperator(mysql)
                 try:
                     self.log.info("Bulk inserting rows into MySQL...")
-                    with closing(mysql.get_conn()) as conn2, closing(conn2.cursor()) as cursor2:
-                        cursor2.execute(
+                    with closing(mysql.get_conn()) as conn, closing(conn.cursor()) as cursor:
+                        cursor.execute(
                             f"LOAD DATA LOCAL INFILE '{tmpfile.name}' "
                             f"INTO TABLE {self.mysql_table} "
                             f"LINES TERMINATED BY '\r\n' ({', '.join(selected_columns)})"
                         )
-                        conn2.commit()
+                        conn.commit()
                     self.log.info("Inserted rows into MySQL %s", count)
                 except (MySQLdb.Error, MySQLdb.Warning):
                     self.log.info("Inserted rows into MySQL 0")

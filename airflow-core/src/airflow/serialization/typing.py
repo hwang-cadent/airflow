@@ -17,7 +17,6 @@
 # under the License.
 from __future__ import annotations
 
-from dataclasses import is_dataclass
 from typing import Any
 
 
@@ -30,9 +29,4 @@ def is_pydantic_model(cls: Any) -> bool:
     """
     # __pydantic_fields__ is always present on Pydantic V2 models and is a dict[str, FieldInfo]
     # __pydantic_validator__ is an internal validator object, always set after model build
-    # Check if it is not a dataclass to prevent detecting pydantic dataclasses as pydantic models
-    return (
-        hasattr(cls, "__pydantic_fields__")
-        and hasattr(cls, "__pydantic_validator__")
-        and not is_dataclass(cls)
-    )
+    return hasattr(cls, "__pydantic_fields__") and hasattr(cls, "__pydantic_validator__")

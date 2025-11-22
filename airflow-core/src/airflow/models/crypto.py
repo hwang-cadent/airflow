@@ -18,7 +18,6 @@
 from __future__ import annotations
 
 import logging
-from functools import cache
 from typing import Protocol
 
 from airflow.configuration import conf
@@ -30,18 +29,14 @@ log = logging.getLogger(__name__)
 class FernetProtocol(Protocol):
     """This class is only used for TypeChecking (for IDEs, mypy, etc)."""
 
-    is_encrypted: bool
-
-    def decrypt(self, msg: bytes | str, ttl: int | None = None) -> bytes:
+    def decrypt(self, b):
         """Decrypt with Fernet."""
-        ...
 
-    def encrypt(self, msg: bytes) -> bytes:
+    def encrypt(self, b):
         """Encrypt with Fernet."""
-        ...
 
 
-class _NullFernet:
+class NullFernet:
     """
     A "Null" encryptor class that doesn't encrypt or decrypt but that presents a similar interface to Fernet.
 
@@ -52,49 +47,19 @@ class _NullFernet:
 
     is_encrypted = False
 
-    def decrypt(self, msg: bytes | str, ttl: int | None = None) -> bytes:
+    def decrypt(self, b):
         """Decrypt with Fernet."""
-        if isinstance(msg, bytes):
-            return msg
-        if isinstance(msg, str):
-            return msg.encode("utf-8")
-        raise ValueError(f"Expected bytes or str, got {type(msg)}")
+        return b
 
-    def encrypt(self, msg: bytes) -> bytes:
+    def encrypt(self, b):
         """Encrypt with Fernet."""
-        return msg
+        return b
 
 
-class _RealFernet:
-    """
-    A wrapper around the real Fernet to set is_encrypted to True.
-
-    This class is only used internally to avoid changing the interface of
-    the get_fernet function.
-    """
-
-    from cryptography.fernet import Fernet, MultiFernet
-
-    is_encrypted = True
-
-    def __init__(self, fernet: MultiFernet):
-        self._fernet = fernet
-
-    def decrypt(self, msg: bytes | str, ttl: int | None = None) -> bytes:
-        """Decrypt with Fernet."""
-        return self._fernet.decrypt(msg, ttl)
-
-    def encrypt(self, msg: bytes) -> bytes:
-        """Encrypt with Fernet."""
-        return self._fernet.encrypt(msg)
-
-    def rotate(self, msg: bytes | str) -> bytes:
-        """Rotate the Fernet key for the given message."""
-        return self._fernet.rotate(msg)
+_fernet: FernetProtocol | None = None
 
 
-@cache
-def get_fernet() -> FernetProtocol:
+def get_fernet():
     """
     Deferred load of Fernet key.
 
@@ -106,13 +71,22 @@ def get_fernet() -> FernetProtocol:
     """
     from cryptography.fernet import Fernet, MultiFernet
 
+    global _fernet
+
+    if _fernet:
+        return _fernet
+
     try:
         fernet_key = conf.get("core", "FERNET_KEY")
         if not fernet_key:
             log.warning("empty cryptography key - values will not be stored encrypted.")
-            return _NullFernet()
-
-        fernet = MultiFernet([Fernet(fernet_part.encode("utf-8")) for fernet_part in fernet_key.split(",")])
-        return _RealFernet(fernet)
+            _fernet = NullFernet()
+        else:
+            _fernet = MultiFernet(
+                [Fernet(fernet_part.encode("utf-8")) for fernet_part in fernet_key.split(",")]
+            )
+            _fernet.is_encrypted = True
     except (ValueError, TypeError) as value_error:
         raise AirflowException(f"Could not create Fernet object: {value_error}")
+
+    return _fernet

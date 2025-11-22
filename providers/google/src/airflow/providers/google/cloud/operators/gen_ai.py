@@ -39,7 +39,7 @@ if TYPE_CHECKING:
         TuningDatasetOrDict,
     )
 
-    from airflow.providers.common.compat.sdk import Context
+    from airflow.utils.context import Context
 
 
 class GenAIGenerateEmbeddingsOperator(GoogleCloudBaseOperator):

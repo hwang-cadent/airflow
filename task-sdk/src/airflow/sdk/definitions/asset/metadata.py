@@ -17,13 +17,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import attrs
 
 if TYPE_CHECKING:
-    from pydantic.types import JsonValue
-
     from airflow.sdk.definitions.asset import Asset, AssetAlias
 
 __all__ = ["Metadata"]
@@ -34,5 +32,5 @@ class Metadata:
     """Metadata to attach to an AssetEvent."""
 
     asset: Asset
-    extra: dict[str, JsonValue] = attrs.field(factory=dict)
+    extra: dict[str, Any] = attrs.field(factory=dict)
     alias: AssetAlias | None = None

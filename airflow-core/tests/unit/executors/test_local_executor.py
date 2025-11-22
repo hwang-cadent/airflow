@@ -55,9 +55,8 @@ class TestLocalExecutor:
     def test_serve_logs_default_value(self):
         assert LocalExecutor.serve_logs
 
-    @skip_spawn_mp_start
     @mock.patch("airflow.sdk.execution_time.supervisor.supervise")
-    def test_execution(self, mock_supervise):
+    def _test_execute(self, mock_supervise, parallelism=1):
         success_tis = [
             workloads.TaskInstance(
                 id=uuid7(),
@@ -85,7 +84,7 @@ class TestLocalExecutor:
 
         mock_supervise.side_effect = fake_supervise
 
-        executor = LocalExecutor(parallelism=2)
+        executor = LocalExecutor(parallelism=parallelism)
         executor.start()
 
         assert executor.result_queue.empty()
@@ -119,7 +118,7 @@ class TestLocalExecutor:
 
             executor.end()
 
-            expected = 2
+            expected = self.TEST_SUCCESS_COMMANDS + 1 if parallelism == 0 else parallelism
             # Depending on how quickly the tasks run, we might not need to create all the workers we could
             assert 1 <= len(spawn_worker.calls) <= expected
 
@@ -130,6 +129,14 @@ class TestLocalExecutor:
         for ti in success_tis:
             assert executor.event_buffer[ti.key][0] == State.SUCCESS
         assert executor.event_buffer[fail_ti.key][0] == State.FAILED
+
+    @skip_spawn_mp_start
+    @pytest.mark.parametrize(
+        ("parallelism",),
+        [pytest.param(2, id="limited")],
+    )
+    def test_execution(self, parallelism: int):
+        self._test_execute(parallelism=parallelism)
 
     @mock.patch("airflow.executors.local_executor.LocalExecutor.sync")
     @mock.patch("airflow.executors.base_executor.BaseExecutor.trigger_tasks")
@@ -169,7 +176,7 @@ class TestLocalExecutor:
             executor.end()
 
     @pytest.mark.parametrize(
-        ("conf_values", "expected_server"),
+        ["conf_values", "expected_server"],
         [
             (
                 {

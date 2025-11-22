@@ -17,6 +17,7 @@
 # under the License.
 from __future__ import annotations
 
+import os
 from collections.abc import Sequence
 from subprocess import PIPE, STDOUT, Popen
 from tempfile import NamedTemporaryFile, TemporaryDirectory, gettempdir
@@ -88,7 +89,7 @@ class BashSensor(BaseSensorOperator):
                 close_fds=True,
                 cwd=tmp_dir,
                 env=self.env,
-                start_new_session=True,
+                preexec_fn=os.setsid,
             ) as resp:
                 if resp.stdout:
                     self.log.info("Output:")
